@@ -1,7 +1,7 @@
 import random
 from typing import Hashable, Iterator, List, Callable
 
-from cytoolz.itertoolz import iterate
+from cytoolz.itertoolz import take, iterate
 import networkx as nx
 
 
@@ -22,3 +22,11 @@ def iter_random_walk(G: nx.Graph,
         yield cur
         if len(G[cur]) == 0:
             return
+
+
+def iter_random_walks(G: nx.Graph,
+                      length: int,
+                      choice: Callable[[List[Hashable]], Hashable] = random.choice) -> Iterator[List[Hashable]]:
+    while True:
+        for n in G.nodes():
+            yield list(take(length, iter_random_walk(G, n, choice)))
