@@ -13,7 +13,7 @@ def create_personas(G: nx.Graph,
     """
     Given a graph, a node in the graph, and a clustering algorithm, generate the personas for the given node.
 
-    :param G: NetworkX graph object
+    :param G: input graph
     :param n: node in the graph
     :param clustering: algorithm to cluster node on a graph, a callable taking a graph to an iterable of hashable
     sequences
@@ -47,7 +47,6 @@ def persona_graph(G: nx.Graph,
         _, persona_remap = create_personas(G, n, clustering)
         edge_remap[n] = persona_remap
     persona_graph_edges = [
-        (edge_remap[edge[0]][edge[1]], edge_remap[edge[1]][edge[0]])
-        for edge in G.edges()
+        (edge_remap[edge[0]][edge[1]], edge_remap[edge[1]][edge[0]]) for edge in G.edges()
     ]
     return nx.from_edgelist(persona_graph_edges)
