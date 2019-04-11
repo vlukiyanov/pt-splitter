@@ -1,8 +1,12 @@
+from multiprocessing import cpu_count
 import random
-from typing import Hashable, Iterator, List, Callable
+from typing import Hashable, Iterator, List, Callable, Dict, Tuple
 
 from cytoolz.itertoolz import take, iterate
+from gensim.models import Word2Vec
 import networkx as nx
+
+# TODO figure out iterator versus iterable for typing
 
 
 def iter_random_walk(G: nx.Graph,
@@ -30,3 +34,28 @@ def iter_random_walks(G: nx.Graph,
     while True:
         for n in G.nodes():
             yield list(take(length, iter_random_walk(G, n, choice)))
+
+
+def lookup_tables(G: nx.Graph) -> Tuple[Dict[Hashable, int], Dict[int, Hashable]]:
+    forward = {node: index for index, node in enumerate(G.nodes())}
+    reverse = {forward[node]: node for node in forward}
+    return forward, reverse
+
+
+def initial_deepwalk_embedding(walks: Iterator[List[int]],
+                               forward_lookup: Dict[Hashable, int],
+                               embedding_dimension: int,
+                               min_count: int = 0,
+                               window: int = 10,
+                               workers: int = cpu_count()):  # TODO add type
+    model = Word2Vec(
+        [[str(forward_lookup[node]) for node in walk] for walk in walks],
+        size=embedding_dimension,
+        window=window,
+        min_count=min_count,
+        sg=1,  # use skip-gram
+        hs=1,  # use hierarchical softmax
+        workers=workers,
+        iter=1  # TODO
+    )
+    return {node: model[str(forward_lookup[node])] for node in forward_lookup}
