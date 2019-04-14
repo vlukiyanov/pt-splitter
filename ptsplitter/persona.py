@@ -42,6 +42,7 @@ def persona_graph(G: nx.Graph,
     sequences
     :return: persona graph
     """
+    # TODO preserve node data
     edge_remap = {}
     for n in G.nodes():
         _, persona_remap = create_personas(G, n, clustering)
