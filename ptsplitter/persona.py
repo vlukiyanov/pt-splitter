@@ -35,7 +35,7 @@ def persona_graph(G: nx.Graph,
                   clustering: Callable[[nx.Graph], Iterable[Sequence[Hashable]]] = nx.connected_components
                   ) -> nx.Graph:
     """
-    Construct the persona graph of a graph G.
+    Construct the persona graph of a graph G, this preserves any edge attributes.
 
     :param G: input graph
     :param clustering: algorithm to cluster node on a graph, a callable taking a graph to an iterable of hashable
@@ -47,6 +47,7 @@ def persona_graph(G: nx.Graph,
         _, persona_remap = create_personas(G, n, clustering)
         edge_remap[n] = persona_remap
     persona_graph_edges = [
-        (edge_remap[edge[0]][edge[1]], edge_remap[edge[1]][edge[0]]) for edge in G.edges()
+        (edge_remap[start][end], edge_remap[end][start], data)
+        for start, end, data in G.edges(data=True)
     ]
     return nx.from_edgelist(persona_graph_edges)
