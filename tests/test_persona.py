@@ -16,6 +16,11 @@ graph_figure = nx.from_edgelist([
     ('h', 'g')
 ])
 
+graph_ab_weight = nx.from_edgelist([
+    ('a', 'b', {'weight': 1}),
+    ('b', 'c', {'weight': 1})
+])
+
 
 def test_create_personas():
     personas_a = create_personas(graph_figure, 'a', nx.connected_components)
@@ -30,3 +35,10 @@ def test_persona_graph():
     Gp = persona_graph(graph_figure)
     assert Gp.number_of_edges() == 11
     assert Gp.number_of_nodes() == 10
+
+
+def test_persona_graph_data():
+    Gp = persona_graph(graph_ab_weight)
+    assert Gp.number_of_edges() == 2
+    for _, _, data in Gp.edges(data=True):
+        assert data['weight'] == 1
