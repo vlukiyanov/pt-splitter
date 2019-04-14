@@ -1,5 +1,5 @@
 from collections import namedtuple
-from typing import Callable, Iterable, Sequence, Hashable, Tuple, List, Dict
+from typing import Callable, Dict, Hashable, Iterable, List, Sequence, Tuple
 
 import networkx as nx
 
