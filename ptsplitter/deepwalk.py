@@ -22,10 +22,10 @@ def iter_random_walk(G: nx.Graph,
     :param choice: choice function to take a list of nodes and select one randomly
     :return: yields nodes in a random walk, starting with the root node
     """
+    if len(G[n]) == 0:
+        return
     for cur in iterate(lambda x: choice(list(G[x])), n):
         yield cur
-        if len(G[cur]) == 0:  # is this check needed every iteration?
-            return
 
 
 def iter_random_walks(G: nx.Graph,
