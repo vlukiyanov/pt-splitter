@@ -5,6 +5,7 @@ from typing import Hashable, Iterator, List, Callable, Dict, Tuple
 from cytoolz.itertoolz import take, iterate
 from gensim.models import Word2Vec
 import networkx as nx
+import numpy as np
 
 # TODO figure out iterator versus iterable for typing
 
@@ -62,7 +63,7 @@ def initial_deepwalk_embedding(walks: Iterator[List[int]],
                                embedding_dimension: int,
                                min_count: int = 0,
                                window: int = 10,
-                               workers: int = cpu_count()):  # TODO add type
+                               workers: int = cpu_count()) -> Dict[Hashable, np.ndarray]:
     # TODO constructing the list below might use a lot of memory for larger walks
     model = Word2Vec(
         [[str(forward_lookup[node]) for node in walk] for walk in walks],
@@ -74,4 +75,13 @@ def initial_deepwalk_embedding(walks: Iterator[List[int]],
         workers=workers,
         iter=1  # TODO figure out iter setting
     )
-    return {node: model[str(forward_lookup[node])] for node in forward_lookup}
+    return {node: model.wv[str(forward_lookup[node])] for node in forward_lookup}
+
+
+def to_embedding_matrix(node_embeddings,
+                        embedding_dimension: int,
+                        reverse_lookup: Dict[int, Hashable]) -> np.ndarray:
+    initial_embedding = np.ndarray((len(node_embeddings), embedding_dimension))
+    for index in reverse_lookup:
+        initial_embedding[index, :] = node_embeddings[reverse_lookup[index]]
+    return initial_embedding
