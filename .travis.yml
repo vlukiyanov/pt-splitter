@@ -8,6 +8,7 @@ install:
   - python setup.py install
 # command to run tests
 script:
+  - sudo rm -f /etc/boto.cfg
   - pytest --cov=ptsplitter
 after_success:
   - codecov
