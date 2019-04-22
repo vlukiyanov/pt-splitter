@@ -1,6 +1,6 @@
 from multiprocessing import cpu_count
 import random
-from typing import Hashable, Iterator, List, Callable, Dict, Tuple
+from typing import Hashable, Iterator, List, Callable, Dict, Tuple, Iterable
 
 from cytoolz.itertoolz import take, iterate, sliding_window
 from gensim.models import Word2Vec
@@ -58,13 +58,14 @@ def lookup_tables(G: nx.Graph) -> Tuple[Dict[Hashable, int], Dict[int, Hashable]
     return forward, reverse
 
 
-def initial_deepwalk_embedding(walks: Iterator[List[int]],
+def initial_deepwalk_embedding(walks: Iterable[List[int]],  # TODO typing
                                forward_lookup: Dict[Hashable, int],
                                embedding_dimension: int,
                                min_count: int = 0,
                                window: int = 10,
                                workers: int = cpu_count()) -> Dict[Hashable, np.ndarray]:
     # TODO constructing the list below might use a lot of memory for larger walks
+    # TODO out of vocab issue, if node is not seen in any walk
     model = Word2Vec(
         [[str(forward_lookup[node]) for node in walk] for walk in walks],
         size=embedding_dimension,
@@ -76,6 +77,10 @@ def initial_deepwalk_embedding(walks: Iterator[List[int]],
         iter=1  # TODO figure out iter setting
     )
     return {node: model.wv[str(forward_lookup[node])] for node in forward_lookup}
+
+
+def initial_persona_embedding(Gp: nx.Graph, initial_embedding: Dict[Hashable, np.ndarray]):
+    return {persona_node: initial_embedding[persona_node.node] for persona_node in Gp.nodes()}
 
 
 def to_embedding_matrix(node_embeddings: Dict[Hashable, np.ndarray],
