@@ -16,7 +16,7 @@ graph_abcd = nx.from_edgelist([
 def test_embedding_basic():
     embedding = SplitterEmbedding(
         node_count=10,
-        ego_node_count=15,
+        persona_node_count=15,
         embedding_dimension=100
     )
     persona_batch = torch.ones(5).long()
@@ -31,7 +31,7 @@ def test_embedding_graph():
     initial_embedding = to_embedding_matrix(node_embeddings, 100, reverse)
     embedding = SplitterEmbedding(
         node_count=10,
-        ego_node_count=15,
+        persona_node_count=15,
         embedding_dimension=100,
         initial_embedding=initial_embedding
     )
@@ -43,7 +43,7 @@ def test_embedding_graph():
 def test_loss_basic():
     embedding = SplitterEmbedding(
         node_count=10,
-        ego_node_count=15,
+        persona_node_count=15,
         embedding_dimension=100,
     )
     persona_batch = torch.ones(5).long()

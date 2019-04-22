@@ -1,7 +1,8 @@
 from cytoolz.itertoolz import take
 import networkx as nx
 
-from ptsplitter.deepwalk import iter_random_walk, iter_random_walks, lookup_tables, initial_deepwalk_embedding, to_embedding_matrix
+from ptsplitter.deepwalk import iter_random_walk, iter_random_walks, lookup_tables, initial_deepwalk_embedding, \
+    to_embedding_matrix, iter_skip_window_walk
 
 
 graph_abcd = nx.from_edgelist([
@@ -47,3 +48,14 @@ def test_to_embedding_matrix():
     embedding = to_embedding_matrix(node_embedding, 10, reverse)
     # TODO add more thorough tests that check what this is actually doing
     assert embedding.shape == (2, 10)
+
+
+def test_iter_skip_window_walk():
+    walk = [0, 1, 2, 3]  # 1 and 2 are the center nodes for window_size 1
+    expected = {
+        (1, 0),
+        (1, 2),
+        (2, 1),
+        (2, 3)
+    }
+    assert expected == set(iter_skip_window_walk(walk, 1))
