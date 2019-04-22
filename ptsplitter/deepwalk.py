@@ -2,7 +2,7 @@ from multiprocessing import cpu_count
 import random
 from typing import Hashable, Iterator, List, Callable, Dict, Tuple
 
-from cytoolz.itertoolz import take, iterate
+from cytoolz.itertoolz import take, iterate, sliding_window
 from gensim.models import Word2Vec
 import networkx as nx
 import numpy as np
@@ -78,10 +78,16 @@ def initial_deepwalk_embedding(walks: Iterator[List[int]],
     return {node: model.wv[str(forward_lookup[node])] for node in forward_lookup}
 
 
-def to_embedding_matrix(node_embeddings,
+def to_embedding_matrix(node_embeddings: Dict[Hashable, np.ndarray],
                         embedding_dimension: int,
                         reverse_lookup: Dict[int, Hashable]) -> np.ndarray:
     initial_embedding = np.ndarray((len(node_embeddings), embedding_dimension))
     for index in reverse_lookup:
         initial_embedding[index, :] = node_embeddings[reverse_lookup[index]]
     return initial_embedding
+
+
+def skip_window_walk(walk: List[int], window_size: int) -> Iterator[Tuple[int, int]]:
+    for window in sliding_window(2*window_size+1, walk):
+        for target in window[:window_size] + window[window_size+1:]:
+            yield (window[window_size], target)
