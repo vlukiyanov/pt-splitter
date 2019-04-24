@@ -1,13 +1,14 @@
-from functools import partial
+from functools import partial, lru_cache
 from multiprocessing import cpu_count
 import random
-from typing import Hashable, Iterator, List, Callable, Dict, Tuple, Iterable
+from typing import Hashable, Iterator, List, Callable, Dict, Tuple, Iterable, Optional
 
 from cytoolz.itertoolz import take, iterate, sliding_window, partition, mapcat
 from gensim.models import Word2Vec
 import networkx as nx
 import numpy as np
 import torch
+from torch.utils.data.dataset import Dataset
 
 # TODO figure out iterator versus iterable for typing
 
@@ -114,3 +115,36 @@ def iter_training_batches(walks: Iterator[List[Hashable]],
             pure_node_batch[index] = forward_lookup[source.node]
             context_node_batch[index] = forward_lookup_persona[target]
         yield persona_batch, pure_node_batch, context_node_batch
+
+
+class DeepWalkDataset(Dataset):
+    def __init__(self,
+                 graph: nx.Graph,
+                 window_size: int,
+                 walk_length: int,
+                 forward_lookup_persona: Dict[Hashable, int],
+                 forward_lookup: Dict[Hashable, int],
+                 dataset_size: Optional[int] = None) -> None:
+        super(DeepWalkDataset, self).__init__()
+        self.graph = graph
+        self.window_size = window_size
+        self.walk_length = walk_length
+        self.forward_lookup_persona = forward_lookup_persona
+        self.forward_lookup = forward_lookup
+        self.dataset_size = dataset_size if dataset_size is not None else graph.number_of_nodes() * walk_length
+        self.walker = mapcat(
+            partial(iter_skip_window_walk, window_size=window_size),
+            iter_random_walks(graph, walk_length)
+        )
+
+    @lru_cache(maxsize=None)
+    def __getitem__(self, index):
+        source, target = next(self.walker)
+        return (
+            self.forward_lookup_persona[source],
+            self.forward_lookup[source.node],
+            self.forward_lookup_persona[target],
+        )
+
+    def __len__(self):
+        return self.dataset_size
