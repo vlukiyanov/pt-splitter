@@ -96,8 +96,8 @@ def to_embedding_matrix(node_embeddings: Dict[Hashable, np.ndarray],
 
 
 def iter_skip_window_walk(walk: List[Hashable], window_size: int) -> Iterator[Tuple[int, int]]:
-    for window in sliding_window(2*window_size+1, walk):
-        for target in window[:window_size] + window[window_size+1:]:
+    for window in sliding_window(2 * window_size + 1, walk):
+        for target in window[:window_size] + window[window_size + 1:]:
             yield (window[window_size], target)
 
 

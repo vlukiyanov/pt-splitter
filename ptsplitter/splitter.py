@@ -40,12 +40,12 @@ class SplitterEmbedding(nn.Module):
         self.predict_persona_embedding = torch.nn.AdaptiveLogSoftmaxWithLoss(
             in_features=embedding_dimension,
             n_classes=persona_node_count,
-            cutoffs=[round(node_count/10), 2*round(node_count/10), 3*round(node_count/10)]
+            cutoffs=[round(node_count / 10), 2 * round(node_count / 10), 3 * round(node_count / 10)]
         )
         self.predict_embedding = torch.nn.AdaptiveLogSoftmaxWithLoss(
             in_features=embedding_dimension,
             n_classes=node_count,
-            cutoffs=[round(node_count/10), 2*round(node_count/10), 3*round(node_count/10)]
+            cutoffs=[round(node_count / 10), 2 * round(node_count / 10), 3 * round(node_count / 10)]
         )
 
     def loss(self, persona_batch, pure_node_batch, context_node_batch):
@@ -53,7 +53,7 @@ class SplitterEmbedding(nn.Module):
         main_loss = self.predict_persona_embedding(self.persona_embedding(persona_batch), context_node_batch)
         # regularisation loss
         regularisation_loss = self.predict_embedding(self.persona_embedding(persona_batch), pure_node_batch)
-        return main_loss.loss + self.lamb*regularisation_loss.loss
+        return main_loss.loss + self.lamb * regularisation_loss.loss
 
     def forward(self, persona_batch):
         return self.persona_embedding(persona_batch)

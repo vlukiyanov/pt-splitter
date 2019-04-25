@@ -1,7 +1,7 @@
 import networkx as nx
 import numpy as np
 import scipy as sp
-from scipy.sparse import identity, spdiags
+from scipy.sparse import spdiags
 
 
 def basis_vector(size, i, **kwargs):
@@ -15,4 +15,3 @@ def transition_matrix(G):
     n, m = M.shape
     DI = spdiags(1.0 / sp.array(M.sum(axis=1).flat), [0], n, n)
     return (DI * M).transpose().tocsr()
-
