@@ -1,12 +1,7 @@
 from typing import Any, Callable, Optional
 import torch
-import torch.nn.functional as F
-import torch.nn as nn
 from torch.utils.data import DataLoader
 from tqdm import tqdm
-
-from ptsplitter.deepwalk import iter_random_walks, initial_deepwalk_embedding
-from ptsplitter.splitter import SplitterEmbedding
 
 
 def train(dataset: torch.utils.data.Dataset,
