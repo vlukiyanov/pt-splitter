@@ -8,14 +8,14 @@ This follows (*or attempts to; note this implementation is unofficial*) the algo
 
 Currently this is work in progress, and is lacking more tests and further examples.
 
-# Examples
+## Examples
 
 TODO
 
-# Usage
+## Usage
 
 TODO
 
-# Other implementations of Splitter or similar
+## Other implementations of Splitter or similar
 
 * PyTorch https://github.com/benedekrozemberczki/Splitter
