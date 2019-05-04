@@ -1,13 +1,12 @@
 from functools import partial, lru_cache
 from multiprocessing import cpu_count
 import random
-from typing import Hashable, Iterator, List, Callable, Dict, Tuple, Iterable, Optional
+from typing import Hashable, Iterator, List, Callable, Dict, Tuple, Optional
 
-from cytoolz.itertoolz import take, iterate, sliding_window, partition, mapcat
+from cytoolz.itertoolz import take, iterate, sliding_window, mapcat
 from gensim.models import Word2Vec
 import networkx as nx
 import numpy as np
-import torch
 from torch.utils.data.dataset import Dataset
 
 # TODO figure out iterator versus iterable for typing
@@ -99,22 +98,6 @@ def iter_skip_window_walk(walk: List[Hashable], window_size: int) -> Iterator[Tu
     for window in sliding_window(2 * window_size + 1, walk):
         for target in window[:window_size] + window[window_size + 1:]:
             yield (window[window_size], target)
-
-
-def iter_training_batches(walks: Iterator[List[Hashable]],
-                          window_size: int,
-                          batch_size: int,
-                          forward_lookup_persona: Dict[Hashable, int],
-                          forward_lookup: Dict[Hashable, int]) -> Iterable[Tuple[torch.Tensor, torch.Tensor, torch.Tensor]]:
-    for window_batch in partition(batch_size, mapcat(partial(iter_skip_window_walk, window_size=window_size), walks)):
-        persona_batch = torch.Tensor(batch_size).long()
-        pure_node_batch = torch.Tensor(batch_size).long()
-        context_node_batch = torch.Tensor(batch_size).long()
-        for index, (source, target) in enumerate(window_batch):
-            persona_batch[index] = forward_lookup_persona[source]
-            pure_node_batch[index] = forward_lookup[source.node]
-            context_node_batch[index] = forward_lookup_persona[target]
-        yield persona_batch, pure_node_batch, context_node_batch
 
 
 class DeepWalkDataset(Dataset):
