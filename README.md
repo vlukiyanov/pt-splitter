@@ -6,7 +6,7 @@ PyTorch implementation of a version of the Splitter algorithm for graph embeddin
 
 This follows (*or attempts to; note this implementation is unofficial*) the algorithm described in "Is a Single Embedding Enough? Learning Node Representations that Capture Multiple Social Contexts" of Alessandro Epasto, Bryan Perozzi (http://epasto.org/papers/www2019splitter.pdf).
 
-Currently this is work in progress, and is lacking more tests and further examples.
+**Currently this is work in progress, and is lacking more tests and further examples. In particular it doesn't yet reproduce any accuracy results.**
 
 ## Examples
 
