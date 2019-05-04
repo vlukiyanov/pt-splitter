@@ -131,7 +131,7 @@ def train(dataset: torch.utils.data.Dataset,
                 update_callback(epoch, optimizer.param_groups[0]['lr'], loss_value, validation_loss_value)
 
 
-def predict(reverse_persona: Dict[int, PersonaNode], model: torch.nn.Module) -> pd.DataFrame:
+def predict(reverse_persona: Dict[int, PersonaNode], model: torch.nn.Module) -> Dict[str, Any]:
     persona_embedding = model.persona_embedding.weight.detach().cpu()
     data = {
         'persona_node': [],
@@ -143,5 +143,5 @@ def predict(reverse_persona: Dict[int, PersonaNode], model: torch.nn.Module) -> 
         data['persona_node'].append(reverse_persona[index])
         data['node'].append(reverse_persona[index].node)
         data['index'].append(reverse_persona[index].index)
-        data['embedding_vector'].append(persona_embedding[index])
-    return pd.DataFrame(data)
+        data['embedding_vector'].append(persona_embedding[index].numpy())
+    return data

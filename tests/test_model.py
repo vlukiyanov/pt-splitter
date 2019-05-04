@@ -47,9 +47,10 @@ def test_predict():
         persona_node_count=persona_karate.number_of_nodes(),
         embedding_dimension=100
     )
-    df = predict(reverse_persona, embedding)
-    assert len(df) == len(reverse_persona)
-    assert set(df.columns) == {'persona_node', 'node', 'index', 'embedding_vector'}
-    assert set(df['node']) == set(karate.nodes)
-    assert set(df['persona_node']) == set(persona_karate.nodes)
-    assert set(df['index']).issuperset({0, 1})
+    data = predict(reverse_persona, embedding)
+    for item in data.keys():
+        assert len(data[item]) == len(reverse_persona)
+    assert set(data.keys()) == {'persona_node', 'node', 'index', 'embedding_vector'}
+    assert set(data['node']) == set(karate.nodes)
+    assert set(data['persona_node']) == set(persona_karate.nodes)
+    assert set(data['index']).issuperset({0, 1})
