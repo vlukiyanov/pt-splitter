@@ -53,4 +53,3 @@ def test_predict():
     assert set(df['node']) == set(karate.nodes)
     assert set(df['persona_node']) == set(persona_karate.nodes)
     assert set(df['index']).issuperset({0, 1})
-
