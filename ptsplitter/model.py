@@ -1,7 +1,10 @@
-from typing import Any, Callable, Optional
+import pandas as pd
+from typing import Any, Callable, Optional, Hashable, Dict
 import torch
 from torch.utils.data import DataLoader
 from tqdm import tqdm
+
+from ptsplitter.persona import PersonaNode
 
 
 def train(dataset: torch.utils.data.Dataset,
@@ -15,8 +18,7 @@ def train(dataset: torch.utils.data.Dataset,
           sampler: Optional[torch.utils.data.sampler.Sampler] = None,
           silent: bool = False,
           update_freq: Optional[int] = 1,
-          update_callback: Optional[Callable[[float, float], None]] = None,
-          epoch_callback: Optional[Callable[[int, torch.nn.Module], None]] = None) -> None:
+          update_callback: Optional[Callable[[float, float], None]] = None) -> None:
     """
     Function to train an model using the provided dataset. If the dataset consists of 2-tuples or lists of
     (feature, prediction), then the prediction is stripped away.
@@ -68,7 +70,7 @@ def train(dataset: torch.utils.data.Dataset,
                 'lss': '%.6f' % 0.0,
                 'vls': '%.6f' % -1,
             },
-            disable=silent,
+            disable=silent
         )
         for index, (persona_batch, pure_node_batch, context_node_batch) in enumerate(data_iterator):
             if cuda:
@@ -127,56 +129,19 @@ def train(dataset: torch.utils.data.Dataset,
                 )
             if update_callback is not None:
                 update_callback(epoch, optimizer.param_groups[0]['lr'], loss_value, validation_loss_value)
-        if epoch_callback is not None:
-            model.eval()
-            epoch_callback(epoch, model)
-            model.train()
 
 
-# TODO
-# def predict(
-#         dataset: torch.utils.data.Dataset,
-#         model: torch.nn.Module,
-#         batch_size: int,
-#         cuda: bool = True,
-#         silent: bool = False,
-#         encode: bool = True) -> torch.Tensor:
-#     """
-#     Given a dataset, run the model in evaluation mode with the inputs in batches and concatenate the
-#     output.
-#
-#     :param dataset: evaluation Dataset
-#     :param model: model for prediction
-#     :param batch_size: batch size
-#     :param cuda: whether CUDA is used, defaults to True
-#     :param silent: set to True to prevent printing out summary statistics, defaults to False
-#     :param encode: whether to encode or use the full model
-#     :return: predicted features from the Dataset
-#     """
-#     dataloader = DataLoader(
-#         dataset,
-#         batch_size=batch_size,
-#         pin_memory=False,
-#         shuffle=False
-#     )
-#     data_iterator = tqdm(
-#         dataloader,
-#         leave=False,
-#         unit='batch',
-#         disable=silent,
-#     )
-#     features = []
-#     if isinstance(model, torch.nn.Module):
-#         model.eval()
-#     for index, batch in enumerate(data_iterator):
-#         if isinstance(batch, tuple) or isinstance(batch, list) and len(batch) in [1, 2]:
-#             batch = batch[0]
-#         if cuda:
-#             batch = batch.cuda(non_blocking=True)
-#         batch = batch.squeeze(1).view(batch.size(0), -1)
-#         if encode:
-#             output = model.encode(batch)
-#         else:
-#             output = model(batch)
-#         features.append(output.detach().cpu())  # move to the CPU to prevent out of memory on the GPU
-#     return torch.cat(features)
+def predict(reverse_persona: Dict[int, PersonaNode], model: torch.nn.Module) -> pd.DataFrame:
+    persona_embedding = model.persona_embedding.weight.detach().cpu()
+    data = {
+        'persona_node': [],
+        'node': [],
+        'index': [],
+        'embedding_vector': []
+    }
+    for index in reverse_persona:
+        data['persona_node'].append(reverse_persona[index])
+        data['node'].append(reverse_persona[index].node)
+        data['index'].append(reverse_persona[index].index)
+        data['embedding_vector'].append(persona_embedding[index])
+    return pd.DataFrame(data)
