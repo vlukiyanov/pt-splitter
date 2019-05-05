@@ -1,4 +1,5 @@
-from typing import Any, Optional, Dict
+import numpy as np
+from typing import Any, Callable, Dict, Optional
 import torch
 from torch.utils.data import DataLoader
 from tqdm import tqdm
@@ -14,7 +15,8 @@ def train(dataset: torch.utils.data.Dataset,
           scheduler: Any = None,
           cuda: bool = True,
           sampler: Optional[torch.utils.data.sampler.Sampler] = None,
-          silent: bool = False) -> None:
+          silent: bool = False,
+          epoch_callback: Optional[Callable[[int, float, float], None]] = None) -> None:
     """
     Function to train an model using the provided dataset.
 
@@ -27,6 +29,7 @@ def train(dataset: torch.utils.data.Dataset,
     :param cuda: whether CUDA is used, defaults to True
     :param sampler: sampler to use in the DataLoader, set to None to disable, defaults to None
     :param silent: set to True to prevent printing out summary statistics, defaults to False
+    :param epoch_callback: function of epoch, learning rate and average loss called per epoch, default disabled.
     :return: None
     """
     dataloader = DataLoader(
@@ -50,6 +53,7 @@ def train(dataset: torch.utils.data.Dataset,
             },
             disable=silent
         )
+        losses = []
         for index, (persona_batch, pure_node_batch, context_node_batch) in enumerate(data_iterator):
             if cuda:
                 persona_batch = persona_batch.cuda(non_blocking=True)
@@ -57,6 +61,7 @@ def train(dataset: torch.utils.data.Dataset,
                 context_node_batch = context_node_batch.cuda(non_blocking=True)
             loss = model.loss(persona_batch, pure_node_batch, context_node_batch)
             loss_value = float(loss.item())
+            losses.append(loss_value)
             optimizer.zero_grad()
             loss.backward()
             optimizer.step(closure=None)
@@ -64,6 +69,8 @@ def train(dataset: torch.utils.data.Dataset,
                 epo=epoch,
                 lss='%.6f' % loss_value,
             )
+        if epoch_callback is not None:
+            epoch_callback(epoch, optimizer.param_groups[0]['lr'], np.mean(losses))
 
 
 def predict(reverse_persona: Dict[int, PersonaNode], model: torch.nn.Module) -> Dict[str, Any]:
