@@ -1,3 +1,4 @@
+from collections import Counter
 from cytoolz.itertoolz import take
 import networkx as nx
 
@@ -13,11 +14,23 @@ graph_abcd = nx.from_edgelist([
 
 graph_ab = nx.from_edgelist([('a', 'b')])
 
+graph_abc_weighted = nx.from_edgelist([('a', 'b'), ('a', 'c'), ('b', 'c')])
+graph_abc_weighted['a']['b']['weight'] = 1
+graph_abc_weighted['a']['c']['weight'] = 2
+
+# TODO some of the tests below are not ideally deterministic, replace with deterministic
+
 
 def test_basic_iter_random_walk():
     assert set(take(10 ** 5, iter_random_walk(graph_abcd, 'a'))) == {'a', 'b', 'c', 'd'}
     assert set(take(2, iter_random_walk(graph_ab, 'a'))) == {'a', 'b'}
     assert set(take(2, iter_random_walk(graph_ab, 'b'))) == {'a', 'b'}
+
+
+def test_basic_iter_random_walk_weighted():
+    assert set(take(10 ** 5, iter_random_walk(graph_abc_weighted, 'a', weight='weight'))) == {'a', 'b', 'c'}
+    count = Counter(take(10 ** 5, iter_random_walk(graph_abc_weighted, 'a', weight='weight')))
+    assert count['c'] > count['b']
 
 
 def test_basic_iter_random_walks():

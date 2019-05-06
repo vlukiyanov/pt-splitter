@@ -1,7 +1,7 @@
 from functools import partial, lru_cache
 from multiprocessing import cpu_count
 import random
-from typing import Hashable, Iterator, List, Callable, Dict, Tuple, Optional
+from typing import Hashable, Iterator, List, Dict, Tuple, Optional
 
 from cytoolz.itertoolz import take, iterate, sliding_window, mapcat
 from gensim.models import Word2Vec
@@ -9,42 +9,48 @@ import networkx as nx
 import numpy as np
 from torch.utils.data.dataset import Dataset
 
-# TODO figure out iterator versus iterable for typing
 
-
-def iter_random_walk(G: nx.Graph,
-                     n: Hashable,
-                     choice: Callable[[List[Hashable]], Hashable] = random.choice
-                     ) -> Iterator[Hashable]:
+def iter_random_walk(G: nx.Graph, n: Hashable, weight: Optional[str] = None) -> Iterator[Hashable]:
     """
     Given an input graph and a root node, repeatedly yield the results of a random walk starting with the root
     node; if the node is disconnected then the walk will consist just of the node itself.
 
     :param G: input graph
     :param n: root node
-    :param choice: choice function to take a list of nodes and select one randomly
+    :param weight: name of weight attribute to use, or None to disable, default None
     :return: yields nodes in a random walk, starting with the root node
     """
+    # TODO this weighted random is probably inefficient, using the transition matrix might be better
+    def _next_node(node):
+        if len(G[node]) == 1:
+            return node
+        elif weight is None:
+            return random.choice(list(G[node]))
+        else:
+            nodes = []
+            weights = []
+            for _, to_node, to_weight in G.edges(node, data=weight, default=0):
+                nodes.append(to_node)
+                weights.append(to_weight)
+            weights = np.array(weights)
+            return nodes[np.random.choice(np.arange(len(nodes)), p=weights/weights.sum())]
     if len(G[n]) == 0:
         return
-    for cur in iterate(lambda x: choice(list(G[x])), n):
-        yield cur
+    yield from iterate(_next_node, n)
 
 
-def iter_random_walks(G: nx.Graph,
-                      length: int,
-                      choice: Callable[[List[Hashable]], Hashable] = random.choice) -> Iterator[List[Hashable]]:
+def iter_random_walks(G: nx.Graph, length: int, weight: Optional[str] = None) -> Iterator[List[Hashable]]:
     """
     Given an input graph, repeatedly yield random walks of a fixed maximum length starting at random nodes; if
     the node is disconnected then the walk will consist of the node itself.
 
     :param G: input graph
     :param length: maximum length of walk
-    :param choice: choice function to map a list of nodes to a node
+    :param weight: name of weight attribute to use, or None to disable, default None
     :return: yields lists of walks
     """
     while True:
-        yield list(take(length, iter_random_walk(G, choice(list(G.nodes())), choice)))
+        yield list(take(length, iter_random_walk(G, random.choice(list(G.nodes())), weight=weight)))
 
 
 def lookup_tables(G: nx.Graph) -> Tuple[Dict[Hashable, int], Dict[int, Hashable]]:
