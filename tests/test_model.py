@@ -1,5 +1,6 @@
 import networkx as nx
 from torch.optim import SGD
+from unittest.mock import Mock
 
 from ptsplitter.deepwalk import lookup_tables, PersonaDeepWalkDataset
 from ptsplitter.model import predict, train
@@ -27,16 +28,22 @@ def test_train():
         forward_lookup_persona=forward_persona,
         forward_lookup=forward
     )
+    scheduler = Mock()
+    epoch_callback = Mock()
     train(
         dataset=dataset,
         model=embedding,
+        scheduler=scheduler,
         epochs=1,
         batch_size=100,
         optimizer=optimizer,
+        epoch_callback=epoch_callback,
         cuda=False
     )
     assert embedding.persona_embedding.weight.shape == (persona_karate.number_of_nodes(), 100)
     assert embedding.embedding.weight.shape == (karate.number_of_nodes(), 100)
+    assert scheduler.step.call_count == 1
+    assert epoch_callback.call_count == 1
 
 
 def test_predict():

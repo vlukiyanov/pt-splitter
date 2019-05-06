@@ -33,7 +33,7 @@ def iter_random_walk(G: nx.Graph, n: Hashable, weight: Optional[str] = None) -> 
                 nodes.append(to_node)
                 weights.append(to_weight)
             weights = np.array(weights)
-            return nodes[np.random.choice(np.arange(len(nodes)), p=weights/weights.sum())]
+            return nodes[np.random.choice(np.arange(len(nodes)), p=weights / weights.sum())]
     if len(G[n]) == 0:
         return
     yield from iterate(_next_node, n)
@@ -132,10 +132,9 @@ def initial_deepwalk_embedding(walks: Iterable[List[Hashable]],
     :param workers: number of workers, defaults to cpu_count()
     :return: dictionary of node to numpy array of the embedding
     """
-    sentences = (
-        [[str(forward_lookup[node]) for node in walk] for walk in walks] +
-        [[str(forward_lookup[node])] for node in forward_lookup]
-    )
+    sentences_walks = [[str(forward_lookup[node]) for node in walk] for walk in walks]
+    sentences_oov = [[str(forward_lookup[node])] for node in forward_lookup]
+    sentences = sentences_walks + sentences_oov
     model = Word2Vec(
         sentences,
         size=embedding_dimension,
