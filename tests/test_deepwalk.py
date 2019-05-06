@@ -1,9 +1,12 @@
 from collections import Counter
 from cytoolz.itertoolz import take
 import networkx as nx
+import numpy as np
+from unittest.mock import Mock
 
 from ptsplitter.deepwalk import iter_random_walk, iter_random_walks, lookup_tables, initial_deepwalk_embedding, \
-    to_embedding_matrix, iter_skip_window_walk
+    to_embedding_matrix, iter_skip_window_walk, initial_persona_embedding
+from ptsplitter.persona import PersonaNode
 
 
 graph_abcd = nx.from_edgelist([
@@ -22,12 +25,14 @@ graph_abc_weighted['a']['c']['weight'] = 2
 
 
 def test_basic_iter_random_walk():
+    # not deterministic but practically OK
     assert set(take(10 ** 5, iter_random_walk(graph_abcd, 'a'))) == {'a', 'b', 'c', 'd'}
     assert set(take(2, iter_random_walk(graph_ab, 'a'))) == {'a', 'b'}
     assert set(take(2, iter_random_walk(graph_ab, 'b'))) == {'a', 'b'}
 
 
 def test_basic_iter_random_walk_weighted():
+    # not deterministic but practically OK
     assert set(take(10 ** 5, iter_random_walk(graph_abc_weighted, 'a', weight='weight'))) == {'a', 'b', 'c'}
     count = Counter(take(10 ** 5, iter_random_walk(graph_abc_weighted, 'a', weight='weight')))
     assert count['c'] > count['b']
@@ -59,7 +64,6 @@ def test_to_embedding_matrix():
     walks = take(100, iter_random_walks(graph_ab, 2))
     node_embedding = initial_deepwalk_embedding(walks, forward, 10)
     embedding = to_embedding_matrix(node_embedding, 10, reverse)
-    # TODO add more thorough tests that check what this is actually doing
     assert embedding.shape == (2, 10)
 
 
@@ -72,3 +76,12 @@ def test_iter_skip_window_walk():
         (2, 3)
     }
     assert expected == set(iter_skip_window_walk(walk, 1))
+
+
+def test_initial_persona_embedding():
+    Gp = Mock()
+    Gp.nodes.return_value = [PersonaNode(node='a', index=0)]
+    initial_embedding = {'a': np.ones(100)}
+    persona_embedding = initial_persona_embedding(Gp, initial_embedding)
+    assert len(persona_embedding) == 1
+    assert isinstance(persona_embedding[PersonaNode(node='a', index=0)], np.ndarray)

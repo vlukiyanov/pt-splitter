@@ -20,10 +20,10 @@ def iter_random_walk(G: nx.Graph, n: Hashable, weight: Optional[str] = None) -> 
     :param weight: name of weight attribute to use, or None to disable, default None
     :return: yields nodes in a random walk, starting with the root node
     """
-    # TODO this weighted random is probably inefficient, using the transition matrix might be better
+    # TODO this weighted random walk is probably inefficient, using the transition matrix might be better?
     def _next_node(node):
         if len(G[node]) == 1:
-            return node
+            return list(G[node])[0]
         elif weight is None:
             return random.choice(list(G[node]))
         else:
@@ -66,6 +66,52 @@ def lookup_tables(G: nx.Graph) -> Tuple[Dict[Hashable, int], Dict[int, Hashable]
     return forward, reverse
 
 
+def to_embedding_matrix(node_embeddings: Dict[Hashable, np.ndarray],
+                        embedding_dimension: int,
+                        reverse_lookup: Dict[int, Hashable]) -> np.ndarray:
+    """
+    Given a node embedding lookup, a lookup from index to node, and the embedding dimension (required only to
+    construct the array for in-place modification), create the node to embedding numpy array that can then be used
+    in the PyTorch network.
+
+    :param node_embeddings: lookup from node to embedding for the graph
+    :param embedding_dimension: dimension of the embeddings, which should be constant
+    :param reverse_lookup: lookup from integer index to node for the graph
+    :return: numpy array of shape [number of nodes, embedding_dimension] filled with the initial embeddings
+    """
+    initial_embedding = np.ndarray((len(node_embeddings), embedding_dimension))
+    for index in reverse_lookup:
+        initial_embedding[index, :] = node_embeddings[reverse_lookup[index]]
+    return initial_embedding
+
+
+def iter_skip_window_walk(walk: List[Hashable], window_size: int) -> Iterator[Tuple[int, int]]:
+    """
+    Given a walk of nodes and a window size, which is interpreted as number of nodes to the left and to the right
+    of the node, iteratively yield the central node and a choice of target node from its windows to the left and
+    right in the walk.
+
+    :param walk: list of nodes
+    :param window_size: number of nodes to the left and to the right
+    :return: yields 2-tuples of source and target for training
+    """
+    for window in sliding_window(2 * window_size + 1, walk):
+        for target in window[:window_size] + window[window_size + 1:]:
+            yield (window[window_size], target)
+
+
+def initial_persona_embedding(Gp: nx.Graph, initial_embedding: Dict[Hashable, np.ndarray]) -> Dict[Hashable, np.ndarray]:
+    """
+    Utility function to create the embedding lookup for the personal graph given the embedding lookup for
+    the original graph.
+
+    :param Gp: persona graph
+    :param initial_embedding: lookup from node to embedding for the original graph
+    :return: lookup from node to embedding for the persona graph
+    """
+    return {persona_node: initial_embedding[persona_node.node] for persona_node in Gp.nodes()}
+
+
 def initial_deepwalk_embedding(walks: Iterator[List[Hashable]],  # TODO typing
                                forward_lookup: Dict[Hashable, int],
                                embedding_dimension: int,
@@ -87,25 +133,6 @@ def initial_deepwalk_embedding(walks: Iterator[List[Hashable]],  # TODO typing
     return {node: model.wv[str(forward_lookup[node])] for node in forward_lookup}
 
 
-def initial_persona_embedding(Gp: nx.Graph, initial_embedding: Dict[Hashable, np.ndarray]):
-    return {persona_node: initial_embedding[persona_node.node] for persona_node in Gp.nodes()}
-
-
-def to_embedding_matrix(node_embeddings: Dict[Hashable, np.ndarray],
-                        embedding_dimension: int,
-                        reverse_lookup: Dict[int, Hashable]) -> np.ndarray:
-    initial_embedding = np.ndarray((len(node_embeddings), embedding_dimension))
-    for index in reverse_lookup:
-        initial_embedding[index, :] = node_embeddings[reverse_lookup[index]]
-    return initial_embedding
-
-
-def iter_skip_window_walk(walk: List[Hashable], window_size: int) -> Iterator[Tuple[int, int]]:
-    for window in sliding_window(2 * window_size + 1, walk):
-        for target in window[:window_size] + window[window_size + 1:]:
-            yield (window[window_size], target)
-
-
 class DeepWalkDataset(Dataset):
     def __init__(self,
                  graph: nx.Graph,
@@ -120,7 +147,9 @@ class DeepWalkDataset(Dataset):
         self.walk_length = walk_length
         self.forward_lookup_persona = forward_lookup_persona
         self.forward_lookup = forward_lookup
+        # TODO push this onto caller
         self.dataset_size = dataset_size if dataset_size is not None else graph.number_of_nodes() * walk_length
+        # the walker is an infinite iterable that yields new training samples; it is safe to call next on this
         self.walker = mapcat(
             partial(iter_skip_window_walk, window_size=window_size),
             iter_random_walks(graph, walk_length)
