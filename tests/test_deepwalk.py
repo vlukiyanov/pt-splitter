@@ -2,11 +2,12 @@ from collections import Counter
 from cytoolz.itertoolz import take
 import networkx as nx
 import numpy as np
+from itertools import cycle
 from unittest.mock import Mock
 
 from ptsplitter.deepwalk import iter_random_walk, iter_random_walks, lookup_tables, initial_deepwalk_embedding, \
-    to_embedding_matrix, iter_skip_window_walk, initial_persona_embedding
-from ptsplitter.persona import PersonaNode
+    to_embedding_matrix, iter_skip_window_walk, initial_persona_embedding, PersonaDeepWalkDataset
+from ptsplitter.persona import PersonaNode, persona_graph
 
 
 graph_abcd = nx.from_edgelist([
@@ -59,6 +60,14 @@ def test_basic_initial_deepwalk_embedding():
     assert set(embedding.keys()) == {'a', 'b'}
 
 
+def test_basic_initial_deepwalk_embedding_oov():
+    forward, reverse = lookup_tables(graph_ab)
+    walks = take(100, cycle([['a']]))
+    embedding = initial_deepwalk_embedding(walks, forward, 10)
+    assert len(embedding) == 2
+    assert set(embedding.keys()) == {'a', 'b'}
+
+
 def test_to_embedding_matrix():
     forward, reverse = lookup_tables(graph_ab)
     walks = take(100, iter_random_walks(graph_ab, 2))
@@ -85,3 +94,22 @@ def test_initial_persona_embedding():
     persona_embedding = initial_persona_embedding(Gp, initial_embedding)
     assert len(persona_embedding) == 1
     assert isinstance(persona_embedding[PersonaNode(node='a', index=0)], np.ndarray)
+
+
+def test_persona_deepwalk_dataset():
+    persona_ab = persona_graph(graph_ab)
+    forward_persona, reverse_persona = lookup_tables(persona_ab)
+    forward, reverse = lookup_tables(graph_ab)
+    dataset = PersonaDeepWalkDataset(
+        graph=persona_ab,
+        window_size=1,
+        walk_length=10,
+        dataset_size=25,
+        forward_lookup_persona=forward_persona,
+        forward_lookup=forward
+    )
+    for item in range(25):
+        assert len(dataset[item]) == 3
+        for index in range(3):
+            assert isinstance(dataset[item][index], int)
+    assert len(dataset) == 25

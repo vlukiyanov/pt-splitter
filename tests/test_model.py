@@ -1,7 +1,7 @@
 import networkx as nx
 from torch.optim import SGD
 
-from ptsplitter.deepwalk import lookup_tables, DeepWalkDataset
+from ptsplitter.deepwalk import lookup_tables, PersonaDeepWalkDataset
 from ptsplitter.model import predict, train
 from ptsplitter.persona import persona_graph
 from ptsplitter.splitter import SplitterEmbedding
@@ -19,12 +19,13 @@ def test_train():
         embedding_dimension=100
     )
     optimizer = SGD(embedding.parameters(), lr=0.01)
-    dataset = DeepWalkDataset(
-        persona_karate,
-        3,
-        20,
-        forward_persona,
-        forward
+    dataset = PersonaDeepWalkDataset(
+        graph=persona_karate,
+        window_size=3,
+        walk_length=20,
+        dataset_size=10,
+        forward_lookup_persona=forward_persona,
+        forward_lookup=forward
     )
     train(
         dataset=dataset,
