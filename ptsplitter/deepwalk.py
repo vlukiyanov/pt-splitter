@@ -1,7 +1,7 @@
 from functools import partial, lru_cache
 from multiprocessing import cpu_count
 import random
-from typing import Hashable, Iterator, List, Dict, Tuple, Optional
+from typing import Hashable, Iterable, Iterator, List, Dict, Tuple, Optional
 
 from cytoolz.itertoolz import take, iterate, sliding_window, mapcat
 from gensim.models import Word2Vec
@@ -10,7 +10,7 @@ import numpy as np
 from torch.utils.data.dataset import Dataset
 
 
-def iter_random_walk(G: nx.Graph, n: Hashable, weight: Optional[str] = None) -> Iterator[Hashable]:
+def iter_random_walk(G: nx.Graph, n: Hashable, weight: Optional[str] = None) -> Iterable[Hashable]:
     """
     Given an input graph and a root node, repeatedly yield the results of a random walk starting with the root
     node; if the node is disconnected then the walk will consist just of the node itself.
@@ -39,7 +39,7 @@ def iter_random_walk(G: nx.Graph, n: Hashable, weight: Optional[str] = None) -> 
     yield from iterate(_next_node, n)
 
 
-def iter_random_walks(G: nx.Graph, length: int, weight: Optional[str] = None) -> Iterator[List[Hashable]]:
+def iter_random_walks(G: nx.Graph, length: int, weight: Optional[str] = None) -> Iterable[List[Hashable]]:
     """
     Given an input graph, repeatedly yield random walks of a fixed maximum length starting at random nodes; if
     the node is disconnected then the walk will consist of the node itself.
@@ -85,7 +85,7 @@ def to_embedding_matrix(node_embeddings: Dict[Hashable, np.ndarray],
     return initial_embedding
 
 
-def iter_skip_window_walk(walk: List[Hashable], window_size: int) -> Iterator[Tuple[int, int]]:
+def iter_skip_window_walk(walk: List[Hashable], window_size: int) -> Iterable[Tuple[int, int]]:
     """
     Given a walk of nodes and a window size, which is interpreted as number of nodes to the left and to the right
     of the node, iteratively yield the central node and a choice of target node from its windows to the left and
@@ -112,23 +112,39 @@ def initial_persona_embedding(Gp: nx.Graph, initial_embedding: Dict[Hashable, np
     return {persona_node: initial_embedding[persona_node.node] for persona_node in Gp.nodes()}
 
 
-def initial_deepwalk_embedding(walks: Iterator[List[Hashable]],  # TODO typing
+def initial_deepwalk_embedding(walks: Iterable[List[Hashable]],
                                forward_lookup: Dict[Hashable, int],
                                embedding_dimension: int,
                                min_count: int = 0,
                                window: int = 10,
                                workers: int = cpu_count()) -> Dict[Hashable, np.ndarray]:
-    # TODO constructing the list below might use a lot of memory for larger walks
-    # TODO out of vocab issue, if node is not seen in any walk
+    """
+    Pretrain the embeddings for a graph, given some initial walks, using the gensim Word2Vec skip-n-gram trainer
+    class. The walks shouldn't be too big as this will get converted to a list to feed to the Word2Vec model. To
+    protect from the scenartion where the walks don't contain some of the nodes in the graph, the model is fed
+    size one walks for all the nodes in the forward_lookup dictionary.
+
+    :param walks: iterable of walks on the graph
+    :param forward_lookup: for the graph a lookup from
+    :param embedding_dimension: dimension for the embeddings generated
+    :param min_count: ignores all words with total frequency lower than this
+    :param window: maximum distance between the current and predicted word within a sentence
+    :param workers: number of workers, defaults to cpu_count()
+    :return: dictionary of node to numpy array of the embedding
+    """
+    sentences = (
+        [[str(forward_lookup[node]) for node in walk] for walk in walks] +
+        [[str(forward_lookup[node])] for node in forward_lookup]
+    )
     model = Word2Vec(
-        [[str(forward_lookup[node]) for node in walk] for walk in walks],
+        sentences,
         size=embedding_dimension,
         window=window,
         min_count=min_count,
         sg=1,  # use skip-gram
         hs=1,  # use hierarchical softmax
         workers=workers,
-        iter=1  # TODO figure out iter setting
+        iter=1
     )
     return {node: model.wv[str(forward_lookup[node])] for node in forward_lookup}
 

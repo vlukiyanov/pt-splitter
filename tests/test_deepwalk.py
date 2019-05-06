@@ -2,6 +2,7 @@ from collections import Counter
 from cytoolz.itertoolz import take
 import networkx as nx
 import numpy as np
+from itertools import cycle
 from unittest.mock import Mock
 
 from ptsplitter.deepwalk import iter_random_walk, iter_random_walks, lookup_tables, initial_deepwalk_embedding, \
@@ -54,6 +55,14 @@ def test_basic_lookup_tables():
 def test_basic_initial_deepwalk_embedding():
     forward, reverse = lookup_tables(graph_ab)
     walks = take(100, iter_random_walks(graph_ab, 2))
+    embedding = initial_deepwalk_embedding(walks, forward, 10)
+    assert len(embedding) == 2
+    assert set(embedding.keys()) == {'a', 'b'}
+
+
+def test_basic_initial_deepwalk_embedding_oov():
+    forward, reverse = lookup_tables(graph_ab)
+    walks = take(100, cycle([['a']]))
     embedding = initial_deepwalk_embedding(walks, forward, 10)
     assert len(embedding) == 2
     assert set(embedding.keys()) == {'a', 'b'}
