@@ -23,7 +23,7 @@ def iter_random_walk(G: nx.Graph, n: Hashable, weight: Optional[str] = None) -> 
     # TODO this weighted random is probably inefficient, using the transition matrix might be better
     def _next_node(node):
         if len(G[node]) == 1:
-            return node
+            return list(G[node])[0]
         elif weight is None:
             return random.choice(list(G[node]))
         else:
@@ -123,7 +123,7 @@ class DeepWalkDataset(Dataset):
         self.dataset_size = dataset_size if dataset_size is not None else graph.number_of_nodes() * walk_length
         self.walker = mapcat(
             partial(iter_skip_window_walk, window_size=window_size),
-            iter_random_walks(graph, walk_length)
+            iter_random_walks(graph, walk_length, weight='weight')  # TODO !!!
         )
 
     @lru_cache(maxsize=None)
