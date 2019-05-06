@@ -133,23 +133,35 @@ def initial_deepwalk_embedding(walks: Iterator[List[Hashable]],  # TODO typing
     return {node: model.wv[str(forward_lookup[node])] for node in forward_lookup}
 
 
-class DeepWalkDataset(Dataset):
+class PersonaDeepWalkDataset(Dataset):
     def __init__(self,
                  graph: nx.Graph,
                  window_size: int,
                  walk_length: int,
+                 dataset_size: int,
                  forward_lookup_persona: Dict[Hashable, int],
-                 forward_lookup: Dict[Hashable, int],
-                 dataset_size: Optional[int] = None) -> None:
-        super(DeepWalkDataset, self).__init__()
+                 forward_lookup: Dict[Hashable, int]) -> None:
+        """
+        Create a PyTorch dataset suitable for training the Splitter model; this takes a persona graph, a window size,
+        and a walk length as its core parameters, and creates random walks from which training data can be generated.
+        The training data are generated on demand so the order is not deterministic, once generated they are cached
+        in memory.
+
+        :param graph: persona graph
+        :param window_size: number of nodes to the left and to the right for the skip-gram model
+        :param walk_length: length of the random walks generated
+        :param dataset_size: overall size of the dataset
+        :param forward_lookup_persona: lookup from persona node to index
+        :param forward_lookup: lookup from original graph node to index
+        """
+        super(PersonaDeepWalkDataset, self).__init__()
         self.graph = graph
         self.window_size = window_size
         self.walk_length = walk_length
         self.forward_lookup_persona = forward_lookup_persona
         self.forward_lookup = forward_lookup
-        # TODO push this onto caller
-        self.dataset_size = dataset_size if dataset_size is not None else graph.number_of_nodes() * walk_length
-        # the walker is an infinite iterable that yields new training samples; it is safe to call next on this
+        self.dataset_size = dataset_size
+        # the walker is an infinite iterable that yields new training samples; safe to call next on this
         self.walker = mapcat(
             partial(iter_skip_window_walk, window_size=window_size),
             iter_random_walks(graph, walk_length)
