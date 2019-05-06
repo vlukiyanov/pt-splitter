@@ -1,7 +1,7 @@
 from functools import partial, lru_cache
 from multiprocessing import cpu_count
 import random
-from typing import Hashable, Iterable, Iterator, List, Dict, Tuple, Optional
+from typing import Hashable, Iterable, List, Dict, Tuple, Optional
 
 from cytoolz.itertoolz import take, iterate, sliding_window, mapcat
 from gensim.models import Word2Vec
