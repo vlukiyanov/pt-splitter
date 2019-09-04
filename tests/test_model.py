@@ -55,10 +55,9 @@ def test_predict():
         persona_node_count=persona_karate.number_of_nodes(),
         embedding_dimension=100
     )
-    data = predict(reverse_persona, embedding)
-    for item in data.keys():
-        assert len(data[item]) == len(reverse_persona)
-    assert set(data.keys()) == {'persona_node', 'node', 'index', 'embedding_vector'}
-    assert set(data['node']) == set(karate.nodes)
-    assert set(data['persona_node']) == set(persona_karate.nodes)
-    assert set(data['index']).issuperset({0, 1})
+    persona_node_list, node_list, index_list, persona_embedding_list = predict(reverse_persona, embedding)
+    for item in [persona_node_list, node_list, index_list, persona_embedding_list]:
+        assert len(item) == len(reverse_persona)
+    assert set(node_list) == set(karate.nodes)
+    assert set(persona_node_list) == set(persona_karate.nodes)
+    assert set(index_list).issuperset({0, 1})
