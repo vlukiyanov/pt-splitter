@@ -5,7 +5,7 @@
 
 PyTorch implementation of a version of the Splitter algorithm for graph embeddings. Compatible with PyTorch 1.0.0 and Python 3.7 with or without CUDA.
 
-This follows (*or attempts to; note this implementation is unofficial*) the algorithm described in "Is a Single Embedding Enough? Learning Node Representations that Capture Multiple Social Contexts" of Alessandro Epasto, Bryan Perozzi (http://epasto.org/papers/www2019splitter.pdf); the official implementation can be found at https://github.com/google-research/google-research/tree/master/graph_embedding/persona.
+This follows (*or attempts to; note this implementation is unofficial*) the algorithm described in "Is a Single Embedding Enough? Learning Node Representations that Capture Multiple Social Contexts" of Alessandro Epasto, Bryan Perozzi (http://epasto.org/papers/www2019splitter.pdf; the official implementation can be found at https://github.com/google-research/google-research/tree/master/graph_embedding/persona).
 
 **Currently this is work in progress, and is lacking more tests and further examples. In particular it doesn't yet reproduce any accuracy results.**
 
