@@ -23,7 +23,6 @@ def iter_random_walk(G: nx.Graph, n: Hashable, weight: Optional[str] = None) -> 
     :param weight: name of weight attribute to use, or None to disable, default None
     :return: yields nodes in a random walk, starting with the root node
     """
-    # TODO this weighted random walk is probably inefficient, using the transition matrix might be better?
     def _next_node(node):
         if len(G[node]) == 1:
             return list(G[node])[0]  # if there is one node, return it
