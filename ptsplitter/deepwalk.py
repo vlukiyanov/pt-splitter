@@ -1,13 +1,16 @@
 from functools import partial, lru_cache
 from multiprocessing import cpu_count
 import random
-from typing import Hashable, Iterable, List, Dict, Tuple, Optional
+from typing import Hashable, Iterable, List, Dict, TypeVar, Tuple, Optional
 
 from cytoolz.itertoolz import take, iterate, sliding_window, mapcat
 from gensim.models import Word2Vec
 import networkx as nx
 import numpy as np
 from torch.utils.data.dataset import Dataset
+
+
+T = TypeVar('T')
 
 
 def iter_random_walk(G: nx.Graph, n: Hashable, weight: Optional[str] = None) -> Iterable[Hashable]:
@@ -53,7 +56,7 @@ def iter_random_walks(G: nx.Graph, length: int, weight: Optional[str] = None) ->
         yield list(take(length, iter_random_walk(G, random.choice(list(G.nodes())), weight=weight)))
 
 
-def lookup_tables(G: nx.Graph) -> Tuple[Dict[Hashable, int], Dict[int, Hashable]]:
+def lookup_tables(G: nx.Graph) -> Tuple[Dict[T, int], Dict[int, T]]:
     """
     Given a graph G construct a lookup table between nodes and their integer position in G.nodes() and a reverse
     lookup as dictionaries.

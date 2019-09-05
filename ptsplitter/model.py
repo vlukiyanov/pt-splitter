@@ -1,5 +1,5 @@
 import numpy as np
-from typing import Any, Callable, Dict, Optional
+from typing import Any, Callable, Dict, Hashable, List, Optional, Tuple
 import torch
 from torch.utils.data import DataLoader
 from tqdm import tqdm
@@ -73,17 +73,24 @@ def train(dataset: torch.utils.data.Dataset,
             epoch_callback(epoch, optimizer.param_groups[0]['lr'], np.mean(losses))
 
 
-def predict(reverse_persona: Dict[int, PersonaNode], model: torch.nn.Module) -> Dict[str, Any]:
+def predict(reverse_persona: Dict[int, PersonaNode],
+            model: torch.nn.Module) -> Tuple[List[PersonaNode], List[Hashable], List[int], List[np.ndarray]]:
+    """
+    Utility function to run the given model to obtain embeddings for all the nodes
+    with some associated metadata. The output can all be zipped up by index.
+
+    :param reverse_persona: lookup from index to PersonaNode
+    :param model: instance of the PyTorch model
+    :return: 4-tuple of list of PersonaNode object, original nodes, index nodes, and embeddings
+    """
     persona_embedding = model.persona_embedding.weight.detach().cpu()
-    data = {
-        'persona_node': [],
-        'node': [],
-        'index': [],
-        'embedding_vector': []
-    }
+    persona_node_list = []
+    node_list = []
+    index_list = []
+    persona_embedding_list = []
     for index in reverse_persona:
-        data['persona_node'].append(reverse_persona[index])
-        data['node'].append(reverse_persona[index].node)
-        data['index'].append(reverse_persona[index].index)
-        data['embedding_vector'].append(persona_embedding[index].numpy())
-    return data
+        persona_node_list.append(reverse_persona[index])
+        node_list.append(reverse_persona[index].node)
+        index_list.append(reverse_persona[index].index)
+        persona_embedding_list.append(persona_embedding[index].numpy())
+    return persona_node_list, node_list, index_list, persona_embedding_list

@@ -1,9 +1,13 @@
-from collections import namedtuple
+from dataclasses import dataclass
 from typing import Callable, Dict, Hashable, Iterable, List, Sequence, Tuple
 
 import networkx as nx
 
-PersonaNode = namedtuple('PersonaNode', 'node, index')
+
+@dataclass(frozen=True)
+class PersonaNode:
+    node: Hashable
+    index: int
 
 
 def create_personas(G: nx.Graph,
