@@ -26,9 +26,9 @@ def iter_random_walk(G: nx.Graph, n: Hashable, weight: Optional[str] = None) -> 
     # TODO this weighted random walk is probably inefficient, using the transition matrix might be better?
     def _next_node(node):
         if len(G[node]) == 1:
-            return list(G[node])[0]
+            return list(G[node])[0]  # if there is one node, return it
         elif weight is None:
-            return random.choice(list(G[node]))
+            return random.choice(list(G[node]))  # if there is are weights, simply pick the next node at random
         else:
             nodes = []
             weights = []
@@ -38,7 +38,7 @@ def iter_random_walk(G: nx.Graph, n: Hashable, weight: Optional[str] = None) -> 
             weights = np.array(weights)
             return nodes[np.random.choice(np.arange(len(nodes)), p=weights / weights.sum())]
     if len(G[n]) == 0:
-        return
+        return  # if there are no adjacent nodes to the start node, do not iterate
     yield from iterate(_next_node, n)
 
 
@@ -124,7 +124,7 @@ def initial_deepwalk_embedding(walks: Iterable[List[Hashable]],
     """
     Pretrain the embeddings for a graph, given some initial walks, using the gensim Word2Vec skip-n-gram trainer
     class. The walks shouldn't be too big as this will get converted to a list to feed to the Word2Vec model. To
-    protect from the scenartion where the walks don't contain some of the nodes in the graph, the model is fed
+    protect from the scenario where the walks don't contain some of the nodes in the graph, the model is fed
     size one walks for all the nodes in the forward_lookup dictionary.
 
     :param walks: iterable of walks on the graph
