@@ -81,7 +81,7 @@ def to_embedding_matrix(node_embeddings: Dict[Hashable, np.ndarray],
     :param reverse_lookup: lookup from integer index to node for the graph
     :return: numpy array of shape [number of nodes, embedding_dimension] filled with the initial embeddings
     """
-    initial_embedding = np.ndarray((len(node_embeddings), embedding_dimension))
+    initial_embedding = np.ndarray((len(node_embeddings), embedding_dimension), dtype=np.float32)
     for index in reverse_lookup:
         initial_embedding[index, :] = node_embeddings[reverse_lookup[index]]
     return initial_embedding
