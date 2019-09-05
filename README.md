@@ -19,5 +19,5 @@ TODO
 
 ## Other implementations of Splitter or similar
 
-* Original implementation https://github.com/google-research/google-research/tree/master/graph_embedding/persona
-* PyTorch https://github.com/benedekrozemberczki/Splitter
+*  Original implementation <https://github.com/google-research/google-research/tree/master/graph_embedding/persona>
+*  PyTorch <https://github.com/benedekrozemberczki/Splitter>
