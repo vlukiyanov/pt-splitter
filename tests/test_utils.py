@@ -1,6 +1,14 @@
-from ptsplitter.utils import embedding_groups, iter_get_scores
+from ptsplitter.utils import (
+    embedding_groups,
+    iter_get_scores,
+    positive_edges,
+    negative_edges
+)
 
+import networkx as nx
 import numpy as np
+
+example_graph = nx.from_edgelist([(str(i), str(i + 1)) for i in range(10)])
 
 
 def test_embedding_groups():
@@ -26,3 +34,11 @@ def test_iter_get_scores():
         assert item == 0
     for item in scores12:
         assert item == 1
+
+
+def test_positive_edges():
+    pass
+
+
+def test_negative_edges():
+    pass
