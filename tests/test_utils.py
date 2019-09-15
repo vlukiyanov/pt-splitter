@@ -8,7 +8,15 @@ from ptsplitter.utils import (
 import networkx as nx
 import numpy as np
 
-example_graph = nx.from_edgelist([(str(i), str(i + 1)) for i in range(10)])
+example_graph = nx.from_edgelist([
+    ('1', '2'),
+    ('1', '3'),
+    ('2', '3'),
+    ('6', '4'),
+    ('6', '5'),
+    ('4', '5'),
+    ('3', '6')
+])
 
 
 def test_embedding_groups():
@@ -37,8 +45,31 @@ def test_iter_get_scores():
 
 
 def test_positive_edges():
-    pass
+    edges = list(positive_edges(example_graph))
+    actual = set(map(frozenset, [
+        ('1', '2'),
+        ('1', '3'),
+        ('2', '3'),
+        ('6', '4'),
+        ('6', '5'),
+        ('4', '5')
+    ]))
+    assert len(edges) == 6
+    assert set(map(frozenset, edges)) == actual
 
 
 def test_negative_edges():
-    pass
+    edges = list(negative_edges(example_graph))
+    print(edges)
+    actual = set(map(frozenset, [
+        ('1', '5'),
+        ('2', '5'),
+        ('3', '5'),
+        ('6', '1'),
+        ('6', '2'),
+        ('4', '1'),
+        ('4', '2'),
+        ('4', '3')
+    ]))
+    assert len(edges) == 8  # 8 + 7 = 15
+    assert set(map(frozenset, edges)) == actual

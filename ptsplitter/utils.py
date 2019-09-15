@@ -3,7 +3,7 @@ import random
 from typing import Any, Callable, Dict, Tuple, Iterable, List, TypeVar
 
 from cytoolz.curried import groupby, valmap
-from cytoolz.itertoolz import getter, take
+from cytoolz.itertoolz import getter
 from cytoolz.functoolz import pipe
 import networkx as nx
 import numpy as np
@@ -48,7 +48,7 @@ def iter_get_scores(groups: Dict[T, List[np.ndarray]],
     )
 
 
-def _iter_positive_edges(G: nx.Graph) -> Iterable[Tuple[Any, Any]]:
+def positive_edges(G: nx.Graph) -> Iterable[Tuple[Any, Any]]:
     """
     Given a graph, yield edges which are positive samples; these can be removed from the
     graph without disconnecting the graph.
@@ -64,7 +64,7 @@ def _iter_positive_edges(G: nx.Graph) -> Iterable[Tuple[Any, Any]]:
             yield choice
 
 
-def _iter_negative_edges(G: nx.Graph) -> Iterable[Tuple[Any, Any]]:
+def negative_edges(G: nx.Graph) -> Iterable[Tuple[Any, Any]]:
     """
     Given a graph, yield (non) edges which are negative samples; none of these edges should
     be contained in the graph.
@@ -75,29 +75,5 @@ def _iter_negative_edges(G: nx.Graph) -> Iterable[Tuple[Any, Any]]:
     edges = set(G.edges())
     nodes = list(G.nodes())
     for node1, node2 in product(nodes, nodes):
-        if node1 != node2 and (node1, node2) not in edges:
+        if node1 != node2 and (node1, node2) not in edges and (node2, node1) not in edges and hash(node1) < hash(node2):
             yield (node1, node2)
-
-
-def positive_edges(G: nx.Graph, quantity: int) -> List[Tuple[Any, Any]]:
-    """
-    Given a graph, return a unique list of edges which are positive samples; these can
-    be removed from the graph without disconnecting the graph.
-
-    :param G: input NetworkX graph object
-    :param quantity: maximum number of unique edges
-    :return: list of tuples, each representing an edge
-    """
-    return take(quantity, _iter_positive_edges(G))
-
-
-def negative_edges(G: nx.Graph, quantity: int) -> List[Tuple[Any, Any]]:
-    """
-    Given a graph, return a unique list of (non) edges which are negative samples; none
-    of these edges should be contained in the graph.
-
-    :param G: input NetworkX graph object
-    :param quantity: maximum number of unique edges
-    :return: list of tuples, each representing an edge
-    """
-    return take(quantity, _iter_negative_edges(G))
