@@ -8,7 +8,6 @@ from cytoolz.functoolz import pipe
 import networkx as nx
 import numpy as np
 
-
 T = TypeVar('T')
 
 
