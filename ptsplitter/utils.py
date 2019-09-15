@@ -43,7 +43,7 @@ def iter_get_scores(groups: Dict[T, List[np.ndarray]],
     :return: iterator of product_function applied to all possible pairs of embeddings
     """
     return (
-        float(product_function(embedding1, embedding1))
+        float(product_function(embedding1, embedding2))
         for embedding1, embedding2 in product(groups[node1], groups[node2])
     )
 

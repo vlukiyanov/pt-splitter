@@ -41,7 +41,7 @@ def test_iter_get_scores():
     for item in scores01:
         assert item == 0
     for item in scores12:
-        assert item == 1
+        assert item == 2
 
 
 def test_positive_edges():
@@ -71,5 +71,5 @@ def test_negative_edges():
         ('4', '2'),
         ('4', '3')
     ]))
-    assert len(edges) == 8  # 8 + 7 = 15
+    assert len(edges) == 8  # 8 + 7 = 15 = 6 choose 2
     assert set(map(frozenset, edges)) == actual
