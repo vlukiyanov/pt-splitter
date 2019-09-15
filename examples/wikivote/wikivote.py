@@ -1,5 +1,6 @@
 from cytoolz.itertoolz import take
 import networkx as nx
+import torch.cuda as cuda
 from torch.optim import SGD
 
 from ptsplitter.deepwalk import (
@@ -16,13 +17,18 @@ from ptsplitter.splitter import SplitterEmbedding
 from ptsplitter.utils import embedding_groups
 
 
-G = nx.read_edgelist('data_input/Wiki-Vote.txt')
+print('Reading in dataset.')
+G = nx.read_edgelist('data_input/wiki-Vote.txt')
 
+print('Constructing persona graph.')
 PG = persona_graph(G)
+
+print('Constructing lookups.')
 forward_persona, reverse_persona = lookup_tables(PG)
 forward, reverse = lookup_tables(G)
 
-walks = take(10000, iter_random_walks(G, length=10))
+print('Generating random walks and initial embeddings.')
+walks = take(100, iter_random_walks(G, length=10))
 base_embedding = initial_deepwalk_embedding(
     walks=walks,
     forward_lookup=forward,
@@ -40,6 +46,8 @@ persona_matrix = to_embedding_matrix(
     reverse_lookup=reverse_persona
 )
 
+print('Running splitter.')
+print(f'CUDA is {str() if cuda.is_available() else "not"} used.')
 embedding = SplitterEmbedding(
     node_count=G.number_of_nodes(),
     persona_node_count=PG.number_of_nodes(),
@@ -47,7 +55,7 @@ embedding = SplitterEmbedding(
     initial_embedding=base_matrix,
     initial_persona_embedding=persona_matrix,
 )
-optimizer = SGD(embedding.parameters(), lr=0.01)
+
 dataset = PersonaDeepWalkDataset(
     graph=PG,
     window_size=3,
@@ -56,13 +64,17 @@ dataset = PersonaDeepWalkDataset(
     forward_lookup_persona=forward_persona,
     forward_lookup=forward
 )
+if cuda.is_available():
+    embedding = embedding.cuda()
+
+optimizer = SGD(embedding.parameters(), lr=0.01)
 train(
     dataset=dataset,
     model=embedding,
     epochs=10,
     batch_size=20,
     optimizer=optimizer,
-    cuda=False
+    cuda=cuda.is_available()
 )
 _, node_list, index_list, persona_embedding_list = predict(reverse_persona, embedding)
 
