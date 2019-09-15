@@ -14,7 +14,12 @@ from ptsplitter.deepwalk import (
 from ptsplitter.model import predict, train
 from ptsplitter.persona import persona_graph
 from ptsplitter.splitter import SplitterEmbedding
-from ptsplitter.utils import embedding_groups
+from ptsplitter.utils import (
+    embedding_groups,
+    positive_edges,
+    negative_edges,
+    iter_get_scores
+)
 
 
 print('Reading in dataset.')
@@ -28,7 +33,7 @@ forward_persona, reverse_persona = lookup_tables(PG)
 forward, reverse = lookup_tables(G)
 
 print('Generating random walks and initial embeddings.')
-walks = take(100, iter_random_walks(G, length=10))
+walks = take(10000, iter_random_walks(G, length=10))
 base_embedding = initial_deepwalk_embedding(
     walks=walks,
     forward_lookup=forward,
@@ -47,7 +52,7 @@ persona_matrix = to_embedding_matrix(
 )
 
 print('Running splitter.')
-print(f'CUDA is {str() if cuda.is_available() else "not"} used.')
+print(f'CUDA is{str() if cuda.is_available() else " not"} utilised.')
 embedding = SplitterEmbedding(
     node_count=G.number_of_nodes(),
     persona_node_count=PG.number_of_nodes(),
@@ -80,3 +85,10 @@ _, node_list, index_list, persona_embedding_list = predict(reverse_persona, embe
 
 groups = embedding_groups(node_list, persona_embedding_list)
 
+negative_samples = take(100, negative_edges(G))
+positive_samples = take(100, positive_edges(G))
+
+positive_scores = [max(iter_get_scores(groups, node1, node2)) for (node1, node2) in positive_samples]
+negative_scores = [max(iter_get_scores(groups, node1, node2)) for (node1, node2) in negative_samples]
+
+print(1)
