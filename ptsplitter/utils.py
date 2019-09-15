@@ -2,8 +2,8 @@ from itertools import product
 import random
 from typing import Any, Callable, Dict, Tuple, Iterable, List, TypeVar
 
-from cytoolz.curried import unique, take, groupby, valmap
-from cytoolz.itertoolz import getter
+from cytoolz.curried import groupby, valmap
+from cytoolz.itertoolz import getter, take
 from cytoolz.functoolz import pipe
 import networkx as nx
 import numpy as np
@@ -59,8 +59,8 @@ def _iter_positive_edges(G: nx.Graph) -> Iterable[Tuple[Any, Any]]:
     """
     bridges = list(nx.bridges(G))
     edges = list(G.edges())
-    while True:
-        choice = random.choice(edges)
+    random.shuffle(edges)
+    for choice in edges:
         if choice not in bridges:
             yield choice
 
@@ -73,17 +73,11 @@ def _iter_negative_edges(G: nx.Graph) -> Iterable[Tuple[Any, Any]]:
     :param G: input NetworkX graph object
     :return: iterate tuples, each representing an edge
     """
-    edges = list(G.edges())
+    edges = set(G.edges())
     nodes = list(G.nodes())
-    while True:
-        node1 = random.choice(nodes)
-        node2 = random.choice(nodes)
+    for node1, node2 in product(nodes, nodes):
         if node1 != node2 and (node1, node2) not in edges:
             yield (node1, node2)
-
-
-def _unique_edges(iterable: Iterable[Tuple[Any, Any]], quantity: int) -> List[Tuple[Any, Any]]:
-    return list(pipe(iterable, take(quantity), unique))
 
 
 def positive_edges(G: nx.Graph, quantity: int) -> List[Tuple[Any, Any]]:
@@ -95,7 +89,7 @@ def positive_edges(G: nx.Graph, quantity: int) -> List[Tuple[Any, Any]]:
     :param quantity: maximum number of unique edges
     :return: list of tuples, each representing an edge
     """
-    return _unique_edges(_iter_positive_edges(G), quantity)
+    return take(quantity, _iter_positive_edges(G))
 
 
 def negative_edges(G: nx.Graph, quantity: int) -> List[Tuple[Any, Any]]:
@@ -107,4 +101,4 @@ def negative_edges(G: nx.Graph, quantity: int) -> List[Tuple[Any, Any]]:
     :param quantity: maximum number of unique edges
     :return: list of tuples, each representing an edge
     """
-    return _unique_edges(_iter_negative_edges(G), quantity)
+    return take(quantity, _iter_negative_edges(G))
