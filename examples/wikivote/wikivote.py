@@ -2,6 +2,7 @@ from cytoolz.itertoolz import take
 import networkx as nx
 import torch.cuda as cuda
 from torch.optim import SGD
+from sklearn.metrics import roc_auc_score
 
 from ptsplitter.deepwalk import (
     initial_deepwalk_embedding,
@@ -24,6 +25,10 @@ from ptsplitter.utils import (
 
 print('Reading in dataset.')
 G = nx.read_edgelist('data_input/wiki-Vote.txt')
+G_original = nx.Graph(G)
+negative_samples = list(take(1000, negative_edges(G)))
+positive_samples = list(take(1000, positive_edges(G)))
+G.remove_nodes_from(positive_samples)
 
 print('Constructing persona graph.')
 PG = persona_graph(G)
@@ -63,8 +68,8 @@ embedding = SplitterEmbedding(
 
 dataset = PersonaDeepWalkDataset(
     graph=PG,
-    window_size=3,
-    walk_length=50,
+    window_size=5,
+    walk_length=40,
     dataset_size=50000,
     forward_lookup_persona=forward_persona,
     forward_lookup=forward
@@ -72,12 +77,12 @@ dataset = PersonaDeepWalkDataset(
 if cuda.is_available():
     embedding = embedding.cuda()
 
-optimizer = SGD(embedding.parameters(), lr=0.01)
+optimizer = SGD(embedding.parameters(), lr=0.025)
 train(
     dataset=dataset,
     model=embedding,
-    epochs=10,
-    batch_size=20,
+    epochs=20,
+    batch_size=10,
     optimizer=optimizer,
     cuda=cuda.is_available()
 )
@@ -85,10 +90,12 @@ _, node_list, index_list, persona_embedding_list = predict(reverse_persona, embe
 
 groups = embedding_groups(node_list, persona_embedding_list)
 
-negative_samples = take(100, negative_edges(G))
-positive_samples = take(100, positive_edges(G))
-
 positive_scores = [max(iter_get_scores(groups, node1, node2)) for (node1, node2) in positive_samples]
 negative_scores = [max(iter_get_scores(groups, node1, node2)) for (node1, node2) in negative_samples]
+
+print(sum(positive_scores))
+print(sum(negative_scores))
+
+print(roc_auc_score([1] * 1000 + [0] * 1000, positive_scores + negative_scores))
 
 print(1)
