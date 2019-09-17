@@ -68,16 +68,16 @@ embedding = SplitterEmbedding(
 
 dataset = PersonaDeepWalkDataset(
     graph=PG,
-    window_size=3,
-    walk_length=100,
-    dataset_size=10000,
+    window_size=5,
+    walk_length=40,
+    dataset_size=50000,
     forward_lookup_persona=forward_persona,
     forward_lookup=forward
 )
 if cuda.is_available():
     embedding = embedding.cuda()
 
-optimizer = SGD(embedding.parameters(), lr=0.01)
+optimizer = SGD(embedding.parameters(), lr=0.025)
 train(
     dataset=dataset,
     model=embedding,
