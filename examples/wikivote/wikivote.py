@@ -22,13 +22,15 @@ from ptsplitter.utils import (
     iter_get_scores
 )
 
+# TODO this dataset is directed
 
 print('Reading in dataset.')
 G = nx.read_edgelist('data_input/wiki-Vote.txt')
+sample_number = G.number_of_edges() // 2
 G_original = nx.Graph(G)
-negative_samples = list(take(1000, negative_edges(G)))
-positive_samples = list(take(1000, positive_edges(G)))
-G.remove_nodes_from(positive_samples)
+positive_samples = list(take(sample_number, positive_edges(G)))
+negative_samples = list(take(sample_number, negative_edges(G)))
+G.remove_edges_from(positive_samples)
 
 print('Constructing persona graph.')
 PG = persona_graph(G)
@@ -81,7 +83,7 @@ optimizer = SGD(embedding.parameters(), lr=0.025)
 train(
     dataset=dataset,
     model=embedding,
-    epochs=20,
+    epochs=10,
     batch_size=10,
     optimizer=optimizer,
     cuda=cuda.is_available()
@@ -96,6 +98,6 @@ negative_scores = [max(iter_get_scores(groups, node1, node2)) for (node1, node2)
 print(sum(positive_scores))
 print(sum(negative_scores))
 
-print(roc_auc_score([1] * 1000 + [0] * 1000, positive_scores + negative_scores))
+print(roc_auc_score([1] * len(positive_samples) + [0] * len(negative_samples), positive_scores + negative_scores))
 
 print(1)

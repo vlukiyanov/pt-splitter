@@ -28,26 +28,6 @@ def embedding_groups(node_list: List[T], persona_embedding_list: List[np.ndarray
     )
 
 
-def iter_get_scores(groups: Dict[T, List[np.ndarray]],
-                    node1: T,
-                    node2: T,
-                    product_function: Callable[[np.ndarray, np.ndarray], Any] = np.dot) -> Iterable[float]:
-    """
-    Iterate all scores between two nodes in the base graph by looking at embeddings of all of their
-    personas. You can then apply some function to this like max, min or mean.
-
-    :param groups: lookup from base node to all their embeddings, output of embedding_groups
-    :param node1: first node, must be present as a key in groups
-    :param node2: second node, must be present as a key in groups
-    :param product_function: function to use to compute the product of the two embeddings, default np.dot
-    :return: iterator of product_function applied to all possible pairs of embeddings
-    """
-    return (
-        float(product_function(embedding1, embedding2))
-        for embedding1, embedding2 in product(groups[node1], groups[node2])
-    )
-
-
 def positive_edges(G: nx.Graph) -> Iterable[Tuple[Any, Any]]:
     """
     Given a graph, yield edges which are positive samples; these can be removed from the
@@ -77,3 +57,23 @@ def negative_edges(G: nx.Graph) -> Iterable[Tuple[Any, Any]]:
     for node1, node2 in product(nodes, nodes):
         if node1 != node2 and (node1, node2) not in edges and (node2, node1) not in edges and hash(node1) < hash(node2):
             yield (node1, node2)
+
+
+def iter_get_scores(groups: Dict[T, List[np.ndarray]],
+                    node1: T,
+                    node2: T,
+                    product_function: Callable[[np.ndarray, np.ndarray], Any] = np.dot) -> Iterable[float]:
+    """
+    Iterate all scores between two nodes in the base graph by looking at embeddings of all of their
+    personas. You can then apply some function to this like max, min or mean.
+
+    :param groups: lookup from base node to all their embeddings, output of embedding_groups
+    :param node1: first node, must be present as a key in groups
+    :param node2: second node, must be present as a key in groups
+    :param product_function: function to use to compute the product of the two embeddings, default np.dot
+    :return: iterator of product_function applied to all possible pairs of embeddings
+    """
+    return (
+        float(product_function(embedding1, embedding2))
+        for embedding1, embedding2 in product(groups[node1], groups[node2])
+    )
