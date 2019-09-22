@@ -70,8 +70,8 @@ embedding = SplitterEmbedding(
 
 dataset = PersonaDeepWalkDataset(
     graph=PG,
-    window_size=3,
-    walk_length=10,
+    window_size=5,
+    walk_length=40,
     dataset_size=50000,
     forward_lookup_persona=forward_persona,
     forward_lookup=forward
