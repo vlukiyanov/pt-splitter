@@ -23,7 +23,7 @@ def embedding_groups(node_list: List[T], persona_embedding_list: List[np.ndarray
     """
     return pipe(
         zip(node_list, persona_embedding_list),
-        groupby(getter(0)),
+        groupby(0),
         valmap(lambda x: list(map(getter(1), x)))
     )
 
