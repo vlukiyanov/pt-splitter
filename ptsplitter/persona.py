@@ -24,6 +24,7 @@ def create_personas(G: nx.Graph,
     :return: 2-tuple which holds: personalities, so PersonaNode objects, for the given node; and a remap dictionary
     which maps every node in the ego-net of n in G to its corresponding PersonaNode of n
     """
+    # TODO this can be optimised
     clusters = clustering(G.subgraph(G.neighbors(n)))
     persona_remap = {}
     personalities = []
