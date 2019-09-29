@@ -1,8 +1,8 @@
 from itertools import product
 import random
-from typing import Any, Callable, Dict, Tuple, Iterable, List, TypeVar
+from typing import Any, Callable, Dict, Tuple, Iterable, List, Tuple, TypeVar
 
-from cytoolz.curried import groupby, valmap
+from cytoolz.curried import groupby, nth, valmap
 from cytoolz.itertoolz import getter
 from cytoolz.functoolz import pipe
 import networkx as nx
@@ -36,12 +36,16 @@ def positive_edges(G: nx.Graph) -> Iterable[Tuple[Any, Any]]:
     :param G: input NetworkX graph object
     :return: iterate tuples, each representing an edge
     """
-    bridges = list(nx.bridges(G))
+    # TODO this needs more tests
+    G = nx.Graph(G)
     edges = list(G.edges())
     random.shuffle(edges)
     for choice in edges:
-        if choice not in bridges:
+        G.remove_edge(*choice)
+        if nx.is_connected(G):
             yield choice
+        else:
+            G.add_edge(*choice)
 
 
 def negative_edges(G: nx.Graph) -> Iterable[Tuple[Any, Any]]:
@@ -65,7 +69,9 @@ def iter_get_scores(groups: Dict[T, List[np.ndarray]],
                     product_function: Callable[[np.ndarray, np.ndarray], Any] = np.dot) -> Iterable[float]:
     """
     Iterate all scores between two nodes in the base graph by looking at embeddings of all of their
-    personas. You can then apply some function to this like max, min or mean.
+    personas. You can then apply some function to this like max, min or mean; one minor snag is if
+    either of the nodes is not in the lookup dictionary, then this will return an empty iterable, which
+    downstream code will have to deal with.
 
     :param groups: lookup from base node to all their embeddings, output of embedding_groups
     :param node1: first node, must be present as a key in groups
@@ -73,7 +79,20 @@ def iter_get_scores(groups: Dict[T, List[np.ndarray]],
     :param product_function: function to use to compute the product of the two embeddings, default np.dot
     :return: iterator of product_function applied to all possible pairs of embeddings
     """
-    return (
-        float(product_function(embedding1, embedding2))
-        for embedding1, embedding2 in product(groups[node1], groups[node2])
-    )
+    if node1 in groups and node2 in groups:
+        yield from (
+            float(product_function(embedding1, embedding2))
+            for embedding1, embedding2 in product(groups[node1], groups[node2])
+        )
+    return
+
+
+def iter_get_scores_networkx(groups: Dict[T, List[np.ndarray]],
+                             node1: T,
+                             node2: T,
+                             G: nx.Graph,
+                             product_function: Callable[[nx.Graph, Iterable[Tuple[T, T]]], Iterable[Tuple[T, T, float]]]
+                             ) -> Iterable[float]:
+    if node1 in groups and node2 in groups:
+        yield from map(nth(2), product_function(G, product(groups[node1], groups[node2])))
+    return
