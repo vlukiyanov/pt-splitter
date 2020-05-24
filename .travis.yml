@@ -3,10 +3,14 @@ python:
   - "3.7"
 # command to install dependencies
 install:
+  - pip install black
   - pip install -q -r requirements.txt
   - python setup.py install
 # command to run tests
 script:
+  - black --fast --check ptsplitter/.
+  - black --fast --check tests/.
+  - black --fast --check examples/.
   - sudo rm -f /etc/boto.cfg
   - pytest --cov=ptsplitter
 after_success:
