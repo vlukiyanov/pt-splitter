@@ -10,10 +10,12 @@ import numpy as np
 from torch.utils.data.dataset import Dataset
 
 
-T = TypeVar('T')
+T = TypeVar("T")
 
 
-def iter_random_walk(G: nx.Graph, n: Hashable, weight: Optional[str] = None) -> Iterable[Hashable]:
+def iter_random_walk(
+    G: nx.Graph, n: Hashable, weight: Optional[str] = None
+) -> Iterable[Hashable]:
     """
     Given an input graph and a root node, repeatedly yield the results of a random walk starting with the root
     node; if the node is disconnected then the walk will consist just of the node itself.
@@ -23,11 +25,14 @@ def iter_random_walk(G: nx.Graph, n: Hashable, weight: Optional[str] = None) -> 
     :param weight: name of weight attribute to use, or None to disable, default None
     :return: yields nodes in a random walk, starting with the root node
     """
+
     def _next_node(node):
         if len(G[node]) == 1:
             return list(G[node])[0]  # if there is one node, return it
         elif weight is None:
-            return random.choice(list(G[node]))  # if there is are weights, simply pick the next node at random
+            return random.choice(
+                list(G[node])
+            )  # if there is are weights, simply pick the next node at random
         else:
             nodes = []
             weights = []
@@ -35,13 +40,18 @@ def iter_random_walk(G: nx.Graph, n: Hashable, weight: Optional[str] = None) -> 
                 nodes.append(to_node)
                 weights.append(to_weight)
             weights = np.array(weights)
-            return nodes[np.random.choice(np.arange(len(nodes)), p=weights / weights.sum())]
+            return nodes[
+                np.random.choice(np.arange(len(nodes)), p=weights / weights.sum())
+            ]
+
     if len(G[n]) == 0:
         return  # if there are no adjacent nodes to the start node, do not iterate
     yield from iterate(_next_node, n)
 
 
-def iter_random_walks(G: nx.Graph, length: int, weight: Optional[str] = None) -> Iterable[List[Hashable]]:
+def iter_random_walks(
+    G: nx.Graph, length: int, weight: Optional[str] = None
+) -> Iterable[List[Hashable]]:
     """
     Given an input graph, repeatedly yield random walks of a fixed maximum length starting at random nodes; if
     the node is disconnected then the walk will consist of the node itself.
@@ -52,7 +62,12 @@ def iter_random_walks(G: nx.Graph, length: int, weight: Optional[str] = None) ->
     :return: yields lists of walks
     """
     while True:
-        yield list(take(length, iter_random_walk(G, random.choice(list(G.nodes())), weight=weight)))
+        yield list(
+            take(
+                length,
+                iter_random_walk(G, random.choice(list(G.nodes())), weight=weight),
+            )
+        )
 
 
 def lookup_tables(G: nx.Graph) -> Tuple[Dict[T, int], Dict[int, T]]:
@@ -68,9 +83,11 @@ def lookup_tables(G: nx.Graph) -> Tuple[Dict[T, int], Dict[int, T]]:
     return forward, reverse
 
 
-def to_embedding_matrix(node_embeddings: Dict[Hashable, np.ndarray],
-                        embedding_dimension: int,
-                        reverse_lookup: Dict[int, Hashable]) -> np.ndarray:
+def to_embedding_matrix(
+    node_embeddings: Dict[Hashable, np.ndarray],
+    embedding_dimension: int,
+    reverse_lookup: Dict[int, Hashable],
+) -> np.ndarray:
     """
     Given a node embedding lookup, a lookup from index to node, and the embedding dimension (required only to
     construct the array for in-place modification), create the node to embedding numpy array that can then be used
@@ -81,13 +98,17 @@ def to_embedding_matrix(node_embeddings: Dict[Hashable, np.ndarray],
     :param reverse_lookup: lookup from integer index to node for the graph
     :return: numpy array of shape [number of nodes, embedding_dimension] filled with the initial embeddings
     """
-    initial_embedding = np.ndarray((len(node_embeddings), embedding_dimension), dtype=np.float32)
+    initial_embedding = np.ndarray(
+        (len(node_embeddings), embedding_dimension), dtype=np.float32
+    )
     for index in reverse_lookup:
         initial_embedding[index, :] = node_embeddings[reverse_lookup[index]]
     return initial_embedding
 
 
-def iter_skip_window_walk(walk: List[Hashable], window_size: int) -> Iterable[Tuple[int, int]]:
+def iter_skip_window_walk(
+    walk: List[Hashable], window_size: int
+) -> Iterable[Tuple[int, int]]:
     """
     Given a walk of nodes and a window size, which is interpreted as number of nodes to the left and to the right
     of the node, iteratively yield the central node and a choice of target node from its windows to the left and
@@ -98,11 +119,13 @@ def iter_skip_window_walk(walk: List[Hashable], window_size: int) -> Iterable[Tu
     :return: yields 2-tuples of source and target for training
     """
     for window in sliding_window(2 * window_size + 1, walk):
-        for target in window[:window_size] + window[window_size + 1:]:
+        for target in window[:window_size] + window[window_size + 1 :]:
             yield (window[window_size], target)
 
 
-def initial_persona_embedding(Gp: nx.Graph, initial_embedding: Dict[Hashable, np.ndarray]) -> Dict[Hashable, np.ndarray]:
+def initial_persona_embedding(
+    Gp: nx.Graph, initial_embedding: Dict[Hashable, np.ndarray]
+) -> Dict[Hashable, np.ndarray]:
     """
     Utility function to create the embedding lookup for the personal graph given the embedding lookup for
     the original graph.
@@ -111,15 +134,20 @@ def initial_persona_embedding(Gp: nx.Graph, initial_embedding: Dict[Hashable, np
     :param initial_embedding: lookup from node to embedding for the original graph
     :return: lookup from node to embedding for the persona graph
     """
-    return {persona_node: initial_embedding[persona_node.node] for persona_node in Gp.nodes()}
+    return {
+        persona_node: initial_embedding[persona_node.node]
+        for persona_node in Gp.nodes()
+    }
 
 
-def initial_deepwalk_embedding(walks: Iterable[List[Hashable]],
-                               forward_lookup: Dict[Hashable, int],
-                               embedding_dimension: int,
-                               min_count: int = 0,
-                               window: int = 10,
-                               workers: int = cpu_count()) -> Dict[Hashable, np.ndarray]:
+def initial_deepwalk_embedding(
+    walks: Iterable[List[Hashable]],
+    forward_lookup: Dict[Hashable, int],
+    embedding_dimension: int,
+    min_count: int = 0,
+    window: int = 10,
+    workers: int = cpu_count(),
+) -> Dict[Hashable, np.ndarray]:
     """
     Pretrain the embeddings for a graph, given some initial walks, using the gensim Word2Vec skip-n-gram trainer
     class. The walks shouldn't be too big as this will get converted to a list to feed to the Word2Vec model. To
@@ -145,19 +173,21 @@ def initial_deepwalk_embedding(walks: Iterable[List[Hashable]],
         sg=1,  # use skip-gram
         hs=1,  # use hierarchical softmax
         workers=workers,
-        iter=1
+        iter=1,
     )
     return {node: model.wv[str(forward_lookup[node])] for node in forward_lookup}
 
 
 class PersonaDeepWalkDataset(Dataset):
-    def __init__(self,
-                 graph: nx.Graph,
-                 window_size: int,
-                 walk_length: int,
-                 dataset_size: int,
-                 forward_lookup_persona: Dict[Hashable, int],
-                 forward_lookup: Dict[Hashable, int]) -> None:
+    def __init__(
+        self,
+        graph: nx.Graph,
+        window_size: int,
+        walk_length: int,
+        dataset_size: int,
+        forward_lookup_persona: Dict[Hashable, int],
+        forward_lookup: Dict[Hashable, int],
+    ) -> None:
         """
         Create a PyTorch dataset suitable for training the Splitter model; this takes a persona graph, a window size,
         and a walk length as its core parameters, and creates random walks from which training data can be generated.
@@ -181,7 +211,7 @@ class PersonaDeepWalkDataset(Dataset):
         # the walker is an infinite iterable that yields new training samples; safe to call next on this
         self.walker = mapcat(
             partial(iter_skip_window_walk, window_size=window_size),
-            iter_random_walks(graph, walk_length)
+            iter_random_walks(graph, walk_length),
         )
 
     @lru_cache(maxsize=None)

@@ -7,16 +7,18 @@ from tqdm import tqdm
 from ptsplitter.persona import PersonaNode
 
 
-def train(dataset: torch.utils.data.Dataset,
-          model: torch.nn.Module,
-          epochs: int,
-          batch_size: int,
-          optimizer: torch.optim.Optimizer,
-          scheduler: Any = None,
-          cuda: bool = True,
-          sampler: Optional[torch.utils.data.sampler.Sampler] = None,
-          silent: bool = False,
-          epoch_callback: Optional[Callable[[int, float, float], None]] = None) -> None:
+def train(
+    dataset: torch.utils.data.Dataset,
+    model: torch.nn.Module,
+    epochs: int,
+    batch_size: int,
+    optimizer: torch.optim.Optimizer,
+    scheduler: Any = None,
+    cuda: bool = True,
+    sampler: Optional[torch.utils.data.sampler.Sampler] = None,
+    silent: bool = False,
+    epoch_callback: Optional[Callable[[int, float, float], None]] = None,
+) -> None:
     """
     Function to train an model using the provided dataset.
 
@@ -33,11 +35,7 @@ def train(dataset: torch.utils.data.Dataset,
     :return: None
     """
     dataloader = DataLoader(
-        dataset,
-        batch_size=batch_size,
-        pin_memory=False,
-        sampler=sampler,
-        shuffle=True
+        dataset, batch_size=batch_size, pin_memory=False, sampler=sampler, shuffle=True
     )
     model.train()
     for epoch in range(epochs):
@@ -46,15 +44,14 @@ def train(dataset: torch.utils.data.Dataset,
         data_iterator = tqdm(
             dataloader,
             leave=True,
-            unit='batch',
-            postfix={
-                'epo': epoch,
-                'lss': '%.6f' % 0.0,
-            },
-            disable=silent
+            unit="batch",
+            postfix={"epo": epoch, "lss": "%.6f" % 0.0,},
+            disable=silent,
         )
         losses = []
-        for index, (persona_batch, pure_node_batch, context_node_batch) in enumerate(data_iterator):
+        for index, (persona_batch, pure_node_batch, context_node_batch) in enumerate(
+            data_iterator
+        ):
             if cuda:
                 persona_batch = persona_batch.cuda(non_blocking=True)
                 pure_node_batch = pure_node_batch.cuda(non_blocking=True)
@@ -66,15 +63,15 @@ def train(dataset: torch.utils.data.Dataset,
             loss.backward()
             optimizer.step(closure=None)
             data_iterator.set_postfix(
-                epo=epoch,
-                lss='%.6f' % loss_value,
+                epo=epoch, lss="%.6f" % loss_value,
             )
         if epoch_callback is not None:
-            epoch_callback(epoch, optimizer.param_groups[0]['lr'], np.mean(losses))
+            epoch_callback(epoch, optimizer.param_groups[0]["lr"], np.mean(losses))
 
 
-def predict(reverse_persona: Dict[int, PersonaNode],
-            model: torch.nn.Module) -> Tuple[List[PersonaNode], List[Hashable], List[int], List[np.ndarray]]:
+def predict(
+    reverse_persona: Dict[int, PersonaNode], model: torch.nn.Module
+) -> Tuple[List[PersonaNode], List[Hashable], List[int], List[np.ndarray]]:
     """
     Utility function to run the given model to obtain embeddings for all the nodes
     with some associated metadata. The output can all be zipped up by index.

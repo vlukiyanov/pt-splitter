@@ -2,22 +2,21 @@ from cytoolz.itertoolz import take
 import networkx as nx
 import torch
 
-from ptsplitter.deepwalk import to_embedding_matrix, iter_random_walks, lookup_tables, initial_deepwalk_embedding
+from ptsplitter.deepwalk import (
+    to_embedding_matrix,
+    iter_random_walks,
+    lookup_tables,
+    initial_deepwalk_embedding,
+)
 from ptsplitter.splitter import SplitterEmbedding
 
 
-graph_abcd = nx.from_edgelist([
-    ('a', 'b'),
-    ('b', 'c'),
-    ('c', 'd')
-])
+graph_abcd = nx.from_edgelist([("a", "b"), ("b", "c"), ("c", "d")])
 
 
 def test_embedding_basic():
     embedding = SplitterEmbedding(
-        node_count=10,
-        persona_node_count=15,
-        embedding_dimension=100
+        node_count=10, persona_node_count=15, embedding_dimension=100
     )
     persona_batch = torch.ones(5).long()
     output = embedding(persona_batch)
@@ -33,7 +32,7 @@ def test_embedding_graph():
         node_count=10,
         persona_node_count=15,
         embedding_dimension=100,
-        initial_embedding=initial_embedding
+        initial_embedding=initial_embedding,
     )
     persona_batch = torch.ones(5).long()
     output = embedding(persona_batch)
@@ -42,9 +41,7 @@ def test_embedding_graph():
 
 def test_loss_basic():
     embedding = SplitterEmbedding(
-        node_count=10,
-        persona_node_count=15,
-        embedding_dimension=100,
+        node_count=10, persona_node_count=15, embedding_dimension=100,
     )
     persona_batch = torch.ones(5).long()
     pure_node_batch = torch.tensor([0, 1, 2, 0, 1])

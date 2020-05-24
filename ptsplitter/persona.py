@@ -10,10 +10,11 @@ class PersonaNode:
     index: int
 
 
-def create_personas(G: nx.Graph,
-                    n: Hashable,
-                    clustering: Callable[[nx.Graph], Iterable[Sequence[Hashable]]]
-                    ) -> Tuple[List[PersonaNode], Dict[Hashable, PersonaNode]]:
+def create_personas(
+    G: nx.Graph,
+    n: Hashable,
+    clustering: Callable[[nx.Graph], Iterable[Sequence[Hashable]]],
+) -> Tuple[List[PersonaNode], Dict[Hashable, PersonaNode]]:
     """
     Given a graph, a node in the graph, and a clustering algorithm, generate the personas for the given node.
 
@@ -36,9 +37,12 @@ def create_personas(G: nx.Graph,
     return personalities, persona_remap
 
 
-def persona_graph(G: nx.Graph,
-                  clustering: Callable[[nx.Graph], Iterable[Sequence[Hashable]]] = nx.connected_components
-                  ) -> nx.Graph:
+def persona_graph(
+    G: nx.Graph,
+    clustering: Callable[
+        [nx.Graph], Iterable[Sequence[Hashable]]
+    ] = nx.connected_components,
+) -> nx.Graph:
     """
     Construct the persona graph of a graph G, this preserves any edge attributes.
 

@@ -8,10 +8,12 @@ from cytoolz.functoolz import pipe
 import networkx as nx
 import numpy as np
 
-T = TypeVar('T')
+T = TypeVar("T")
 
 
-def embedding_groups(node_list: List[T], persona_embedding_list: List[np.ndarray]) -> Dict[T, List[np.ndarray]]:
+def embedding_groups(
+    node_list: List[T], persona_embedding_list: List[np.ndarray]
+) -> Dict[T, List[np.ndarray]]:
     """
     Utility function, which given aligned list of nodes and embedding lists from the model.predict function,
     obtain a dictionary from base graph nodes to a list of embeddings. The order of the embeddings for the
@@ -24,7 +26,7 @@ def embedding_groups(node_list: List[T], persona_embedding_list: List[np.ndarray
     return pipe(
         zip(node_list, persona_embedding_list),
         groupby(0),
-        valmap(lambda x: list(map(getter(1), x)))
+        valmap(lambda x: list(map(getter(1), x))),
     )
 
 
@@ -59,14 +61,21 @@ def negative_edges(G: nx.Graph) -> Iterable[Tuple[Any, Any]]:
     edges = set(G.edges())
     nodes = list(G.nodes())
     for node1, node2 in product(nodes, nodes):
-        if node1 != node2 and (node1, node2) not in edges and (node2, node1) not in edges and hash(node1) < hash(node2):
+        if (
+            node1 != node2
+            and (node1, node2) not in edges
+            and (node2, node1) not in edges
+            and hash(node1) < hash(node2)
+        ):
             yield (node1, node2)
 
 
-def iter_get_scores(groups: Dict[T, List[np.ndarray]],
-                    node1: T,
-                    node2: T,
-                    product_function: Callable[[np.ndarray, np.ndarray], Any] = np.dot) -> Iterable[float]:
+def iter_get_scores(
+    groups: Dict[T, List[np.ndarray]],
+    node1: T,
+    node2: T,
+    product_function: Callable[[np.ndarray, np.ndarray], Any] = np.dot,
+) -> Iterable[float]:
     """
     Iterate all scores between two nodes in the base graph by looking at embeddings of all of their
     personas. You can then apply some function to this like max, min or mean; one minor snag is if
@@ -87,12 +96,17 @@ def iter_get_scores(groups: Dict[T, List[np.ndarray]],
     return
 
 
-def iter_get_scores_networkx(groups: Dict[T, List[np.ndarray]],
-                             node1: T,
-                             node2: T,
-                             G: nx.Graph,
-                             product_function: Callable[[nx.Graph, Iterable[Tuple[T, T]]], Iterable[Tuple[T, T, float]]]
-                             ) -> Iterable[float]:
+def iter_get_scores_networkx(
+    groups: Dict[T, List[np.ndarray]],
+    node1: T,
+    node2: T,
+    G: nx.Graph,
+    product_function: Callable[
+        [nx.Graph, Iterable[Tuple[T, T]]], Iterable[Tuple[T, T, float]]
+    ],
+) -> Iterable[float]:
     if node1 in groups and node2 in groups:
-        yield from map(nth(2), product_function(G, product(groups[node1], groups[node2])))
+        yield from map(
+            nth(2), product_function(G, product(groups[node1], groups[node2]))
+        )
     return
